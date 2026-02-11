@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Birth Pulse - Cinematic Solar System V65</title>
+    <title>Birth Pulse - Cinematic TV Pro V71</title>
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -13,8 +13,9 @@
             font-family: Arial, Helvetica, sans-serif; color: white;
             cursor: grab; touch-action: none;
         }
+        body:active { cursor: grabbing; }
 
-        /* 1. CSS STARS (Zero CPU Load) */
+        /* 1. BACKGROUND STARS */
         .stars-container {
             position: absolute; width: 100%; height: 100%;
             z-index: 1; pointer-events: none;
@@ -25,33 +26,33 @@
         }
         @keyframes blink { 0%, 100% { opacity: 0.1; transform: scale(0.8); } 50% { opacity: 0.7; } }
 
-        /* 2. TOP-LEFT HEADER */
+        /* 2. PHILIPS CORPORATE BLUE LOGO (No Glow) */
         .header-box {
             position: absolute; top: 5vh; left: 5vw;
             z-index: 500; text-align: left;
         }
-        .philips-text { display: flex; margin-bottom: 5px; }
-        .philips-text span {
-            font-size: 2.2vw; font-weight: 900; letter-spacing: 0.3vw;
-            transition: color 1.2s ease; text-transform: uppercase;
+        .philips-logo-static {
+            display: flex; margin-bottom: 5px;
         }
-        .main-heading {
-            font-size: 3.1vw; color: #a855f7; 
-            font-weight: 800; text-shadow: 0 0 30px rgba(168, 85, 247, 0.6);
-            white-space: nowrap;
+        .philips-logo-static span {
+            font-size: 2.8vw; font-weight: 900; letter-spacing: -0.05vw;
+            color: #0b5ed7; /* Corporate Blue */
+            text-transform: uppercase;
         }
 
-        /* 3. BOTTOM-LEFT STATS */
+        .main-heading {
+            font-size: 3.1vw; color: #a855f7; font-weight: 800; 
+            text-shadow: 0 0 30px rgba(168, 85, 247, 0.4); white-space: nowrap;
+        }
+
+        /* 3. STATS PANEL */
         .stats-box { 
             position: absolute; bottom: 8vh; left: 5vw; 
             width: 38vw; z-index: 100; text-align: left;
         }
         .label { font-size: 1.2vw; color: #38bdf8; text-transform: uppercase; font-weight: 900; letter-spacing: 3px; }
-        .count {
-            font-size: 8.5vw; font-weight: 900; color: #fbbf24;
-            line-height: 1.1; margin: 5px 0; 
-            text-shadow: 0 0 25px rgba(250, 204, 21, 0.3);
-        }
+        .count { font-size: 8.5vw; font-weight: 900; color: #fbbf24; line-height: 1.1; margin: 5px 0; }
+        
         .progress-ui { width: 90%; margin-top: 10px; }
         .time-labels { display: flex; justify-content: space-between; width: 100%; margin-bottom: 4px; }
         .marker-text { color: #38bdf8; font-size: 1vw; font-weight: bold; opacity: 0.8; }
@@ -59,7 +60,7 @@
         .bar-fill { height: 100%; width: 0%; background: #fbbf24; }
         #clock { color: #fbbf24; font-size: 1.8vw; font-weight: bold; display: block; text-align: center; margin-top: 12px; letter-spacing: 2px;}
 
-        /* 4. CANVAS */
+        /* 4. CANVAS CONTAINER */
         .canvas-container { position: absolute; left: 0; top: 0; width: 100vw; height: 100vh; z-index: 5; }
         #main-canvas { width: 100%; height: 100%; }
 
@@ -72,10 +73,10 @@
 </head>
 <body>
 
-    <div id="loading">RENDERING REALISTIC PLANETS...</div>
+    <div id="loading">CONSTRUCTING EARTH-CENTRIC UNIVERSE...</div>
     
     <div class="header-box">
-        <div id="philips-text" class="philips-text">
+        <div class="philips-logo-static">
             <span>P</span><span>H</span><span>I</span><span>L</span><span>I</span><span>P</span><span>S</span>
         </div>
         <h1 class="main-heading">Mother & Child Care-Women's Health</h1>
@@ -85,7 +86,7 @@
         <span class="label">Global Birth Count Today</span>
         <div id="birthCount" class="count">0</div>
         <div class="progress-ui">
-            <div class="time-labels"><span>00:00</span><span>24:00</span></div>
+            <div class="time-labels"><span class="marker-text">00:00</span><span class="marker-text">24:00</span></div>
             <div class="bar-wrapper"><div id="bar" class="bar-fill"></div></div>
             <span id="clock">00:00:00</span>
         </div>
@@ -101,28 +102,27 @@
         
         var globeThemes = [
             { land: "#10b981", flash: "#ffffff", ocean: "#0a192f" },
-            { land: "#fb7185", flash: "#22d3ee", ocean: "#1e0108" },
-            { land: "#0ea5e9", flash: "#fbbf24", ocean: "#082f49" },
-            { land: "#eab308", flash: "#a855f7", ocean: "#1e0a01" }
+            { land: "#fb7185", flash: "#ffffff", ocean: "#1e0108" },
+            { land: "#22d3ee", flash: "#fbbf24", ocean: "#042f2e" },
+            { land: "#facc15", flash: "#a855f7", ocean: "#1e0a01" }
         ];
         var currentThemeIdx = 0;
 
-        // Enlarged Realistic Planets Array
+        // REALISTIC PLANET ARRAY (Saturn size reduced 50% to 19)
         var planets = [
-            { id: 'mer', dist: 130, sz: 5,  spd: 0.0007, col: "#9ca3af", ang: Math.random()*7 },
-            { id: 'ven', dist: 180, sz: 8,  spd: 0.0005, col: "#E3BB76", ang: Math.random()*7 },
-            { id: 'mar', dist: 240, sz: 7,  spd: 0.0004, col: "#EF4444", ang: Math.random()*7 },
-            { id: 'jup', dist: 330, sz: 18, spd: 0.0002, col: "#D39C7E", ang: Math.random()*7 },
-            { id: 'sat', dist: 440, sz: 15, spd: 0.0001, col: "#C5AB6E", ang: Math.random()*7, rings: true },
-            { id: 'ura', dist: 530, sz: 10, spd: 0.00008, col: "#bae6fd", ang: Math.random()*7 },
-            { id: 'nep', dist: 610, sz: 10, spd: 0.00006, col: "#3b82f6", ang: Math.random()*7 }
+            { id: 'mer', dist: 130, sz: 6, spd: 0.0008, col: "#A5A5A5", ang: Math.random()*7 },
+            { id: 'ven', dist: 180, sz: 12, spd: 0.0006, col: "#E3BB76", ang: Math.random()*7 },
+            { id: 'mar', dist: 240, sz: 10, spd: 0.0005, col: "#EF4444", ang: Math.random()*7 },
+            { id: 'jup', dist: 330, sz: 24, spd: 0.0003, col: "#D39C7E", ang: Math.random()*7 },
+            { id: 'sat', dist: 440, sz: 19, spd: 0.0002, col: "#C5AB6E", ang: Math.random()*7, rings: true },
+            { id: 'ura', dist: 530, sz: 14, spd: 0.0001, col: "#B5E3E3", ang: Math.random()*7 },
+            { id: 'nep', dist: 620, sz: 14, spd: 0.00008, col: "#4B70DD", ang: Math.random()*7 }
         ];
         
         var worldGeo = null, featureIndex = {}, flashingISO = {}; 
         var canvas = document.getElementById("main-canvas");
         var context = canvas.getContext("2d");
-        var w, h, isDragging = false, lastX, lastY, rotX = 0, rotY = -15;
-        var lastT = performance.now();
+        var w, h, isDragging = false, lastX, lastY, rotX = 0, rotY = -15, lastT = performance.now();
 
         function setSizes() { w = window.innerWidth; h = window.innerHeight; canvas.width = w; canvas.height = h; }
         setSizes();
@@ -138,16 +138,7 @@
         canvas.addEventListener('touchstart', function(e) { e.preventDefault(); hStart(e.touches[0].clientX, e.touches[0].clientY); }, {passive: false});
         window.addEventListener('touchmove', function(e) { e.preventDefault(); hMove(e.touches[0].clientX, e.touches[0].clientY); }, {passive: false});
 
-        function updatePhilips() {
-            var spans = document.querySelectorAll('#philips-text span');
-            for(var i=0; i<spans.length; i++) {
-                var r = Math.floor(Math.random()*155)+100, g = Math.floor(Math.random()*155)+100, b = Math.floor(Math.random()*155)+100;
-                spans[i].style.color = 'rgb('+r+','+g+','+b+')';
-            }
-        }
-
         setInterval(function() { currentThemeIdx = (currentThemeIdx + 1) % globeThemes.length; }, 180000);
-        setInterval(updatePhilips, 1500);
 
         function init() {
             d3.json("https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_admin_0_countries.geojson").then(function(data) {
@@ -171,57 +162,49 @@
 
             var ex = w * 0.74, ey = h * 0.5;
 
-            // 1. Draw Sun
-            var sAng = time * 0.00004;
+            // 1. Draw Sun (Earth-Centric Source)
+            var sAng = time * 0.00003;
             var sx = ex + Math.cos(sAng) * (w * 0.45);
             var sy = ey + Math.sin(sAng) * (h * 0.35);
             var sGrad = context.createRadialGradient(sx, sy, 0, sx, sy, 60);
             sGrad.addColorStop(0, "#ffffff"); sGrad.addColorStop(0.3, "#fbbf24"); sGrad.addColorStop(1, "transparent");
             context.beginPath(); context.arc(sx, sy, 60, 0, 7); context.fillStyle = sGrad; context.fill();
 
-            // 2. Draw Realistic Planets
+            // 2. Draw All Realistic Planets
             for(var i=0; i<planets.length; i++) {
                 var p = planets[i];
-                p.ang += p.spd * dt * 0.12;
+                p.ang += p.spd * dt * 0.1;
                 var px = ex + Math.cos(p.ang) * p.dist;
                 var py = ey + Math.sin(p.ang) * p.dist * 0.65;
 
-                // Orbit line
-                context.beginPath(); context.ellipse(ex, ey, p.dist, p.dist * 0.65, 0, 0, 7);
-                context.strokeStyle = "rgba(255,255,255,0.05)"; context.lineWidth = 1; context.stroke();
-
-                // Realistic Surface Shading based on ID
                 context.save();
                 context.translate(px, py);
-                
-                // Saturn Rings
+
                 if (p.rings) {
-                    context.beginPath(); context.ellipse(0, 0, p.sz*2.4, p.sz*0.9, 0.4, 0, 7);
-                    context.strokeStyle = "rgba(197, 171, 110, 0.3)"; context.lineWidth = 6; context.stroke();
+                    for(var r=0; r<4; r++) {
+                        context.beginPath(); context.ellipse(0, 0, p.sz*(2.0+r*0.1), p.sz*(0.6+r*0.03), 0.4, 0, 7);
+                        context.strokeStyle = "rgba(216, 174, 141, 0.15)"; context.lineWidth = 3; context.stroke();
+                    }
                 }
 
-                // Planet Body
+                var dx = px - sx, dy = py - sy, angToSun = Math.atan2(dy, dx);
                 var pGrad = context.createRadialGradient(-p.sz*0.3, -p.sz*0.3, 0, 0, 0, p.sz);
-                pGrad.addColorStop(0, p.col); // Light side
-                pGrad.addColorStop(1, "#000000"); // Dark side
-                
+                pGrad.addColorStop(0, p.col); pGrad.addColorStop(1, "#000000");
                 context.beginPath(); context.arc(0, 0, p.sz, 0, 7);
                 context.fillStyle = pGrad; context.fill();
-                
-                // Add Atmospheric Haze for Neptune/Uranus
-                if(p.id === 'nep' || p.id === 'ura') {
-                    context.globalAlpha = 0.3;
-                    context.beginPath(); context.arc(0, 0, p.sz + 3, 0, 7);
-                    context.fillStyle = p.col; context.fill();
-                    context.globalAlpha = 1.0;
+
+                context.clip();
+                if(p.id === 'jup' || p.id === 'sat') {
+                    context.strokeStyle = "rgba(0,0,0,0.15)"; context.lineWidth = 3;
+                    for(var j=-p.sz; j<p.sz; j+=5) {
+                        context.beginPath(); context.moveTo(-p.sz, j);
+                        context.bezierCurveTo(-p.sz/2, j-2, p.sz/2, j+2, p.sz, j); context.stroke();
+                    }
                 }
-                
                 context.restore();
 
-                // Directional Shadow logic (Point away from sx, sy)
-                var angToSun = Math.atan2(py - sy, px - sx);
-                var shad = context.createRadialGradient(px + Math.cos(angToSun)*p.sz*0.4, py + Math.sin(angToSun)*p.sz*0.4, 0, px, py, p.sz);
-                shad.addColorStop(0, "rgba(0,0,0,0)"); shad.addColorStop(1, "rgba(0,0,0,0.85)");
+                var shad = context.createRadialGradient(px + Math.cos(angToSun)*p.sz*0.5, py + Math.sin(angToSun)*p.sz*0.5, 0, px, py, p.sz);
+                shad.addColorStop(0, "rgba(0,0,0,0)"); shad.addColorStop(1, "rgba(0,0,0,0.9)");
                 context.beginPath(); context.arc(px, py, p.sz + 0.5, 0, 7);
                 context.fillStyle = shad; context.fill();
             }
@@ -260,15 +243,14 @@
                 document.getElementById('bar').style.width = (elapsed / 86400 * 100) + "%";
                 if (worldGeo) {
                     var idx = Math.floor(Math.random() * worldGeo.features.length);
-                    var f = worldGeo.features[idx];
-                    var iso = f.properties.ISO_A3 || f.properties.ADM0_A3;
+                    var iso = worldGeo.features[idx].properties.ISO_A3 || worldGeo.features[idx].properties.ADM0_A3;
                     flashingISO[iso] = Date.now();
                 }
             }, 1000 / BIRTH_RATE);
         }
 
         var field = document.getElementById('starfield');
-        for (var i = 0; i < 70; i++) {
+        for (var i = 0; i < 60; i++) {
             var s = document.createElement('div'); s.className = 'star';
             s.style.width = s.style.height = (1 + Math.random() * 2) + 'px';
             s.style.left = Math.random() * 100 + '%'; s.style.top = Math.random() * 100 + '%';
