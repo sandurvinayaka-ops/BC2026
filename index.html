@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Birth Pulse - Cinematic TV Pro V74</title>
+    <title>Birth Pulse - Cinematic TV Pro V77</title>
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -30,16 +30,14 @@
             position: absolute; background: white; border-radius: 50%;
             animation: blink var(--t) infinite ease-in-out;
         }
-        @keyframes blink { 0%, 100% { opacity: 0.1; transform: scale(0.8); } 50% { opacity: 0.7; } }
+        @keyframes blink { 0%, 100% { opacity: 0.1; transform: scale(0.8); } 50% { opacity: 0.8; } }
 
-        /* 3. PHILIPS CORPORATE BLUE LOGO */
+        /* 3. PHILIPS LOGO & HEADER */
         .header-box {
             position: absolute; top: 5vh; left: 5vw;
             z-index: 500; text-align: left;
         }
-        .philips-logo-static {
-            display: flex; margin-bottom: 5px;
-        }
+        .philips-logo-static { display: flex; margin-bottom: 5px; }
         .philips-logo-static span {
             font-size: 2.8vw; font-weight: 900; letter-spacing: -0.05vw;
             color: #0b5ed7; text-transform: uppercase;
@@ -54,7 +52,6 @@
             position: absolute; bottom: 8vh; left: 5vw; 
             width: 38vw; z-index: 100; text-align: left;
         }
-        /* FONT SIZE INCREASED 1.5X */
         .label { font-size: 1.8vw; color: #38bdf8; text-transform: uppercase; font-weight: 900; letter-spacing: 3px; }
         .count { font-size: 8.5vw; font-weight: 900; color: #fbbf24; line-height: 1.1; margin: 5px 0; }
         
@@ -78,7 +75,7 @@
 </head>
 <body>
 
-    <div id="loading">CALIBRATING LUNAR SCALE...</div>
+    <div id="loading">GENERATING HI-RES PLANETARY BIOMES...</div>
     <div id="sleep-overlay"></div>
     
     <div class="header-box">
@@ -105,29 +102,29 @@
         // TV-SAFE ES5 SCRIPT
         var BIRTH_RATE = 4.34;
         var EARTH_ROT_SPD = 0.008; 
+        var RESUME_DELAY = 5000;
+        var TARGET_TILT = -15;
         
         var globeThemes = [
             { land: "#10b981", flash: "#ffffff", ocean: "#0a192f" },
-            { land: "#f43f5e", flash: "#ffffff", ocean: "#1e0108" },
+            { land: "#fb7185", flash: "#ffffff", ocean: "#1e0108" },
             { land: "#0ea5e9", flash: "#fbbf24", ocean: "#082f49" },
             { land: "#eab308", flash: "#a855f7", ocean: "#1e0a01" }
         ];
         var currentThemeIdx = 0;
 
-        // Realistic Moon (Large) & Planets
-        var moon = { id: 'moon', dist: 380, sz: 60, spd: 0.0012, col: "#94a3b8", ang: Math.random()*7 };
+        // HI-RES PROCEDURAL PLANET DATA
+        var moon = { dist: 380, sz: 60, spd: 0.0012, ang: Math.random()*7, col: "#94a3b8" };
+        var saturn = { dist: 650, sz: 32, spd: 0.0002, ang: Math.random()*7, col: "#d8ae8d" };
         var planets = [
             { id: 'mer', dist: 130, sz: 6, spd: 0.0008, col: "#A5A5A5", ang: Math.random()*7 },
-            { id: 'ven', dist: 190, sz: 12, spd: 0.0006, col: "#E3BB76", ang: Math.random()*7 },
-            { id: 'mar', dist: 250, sz: 10, spd: 0.0005, col: "#EF4444", ang: Math.random()*7 },
-            { id: 'jup', dist: 530, sz: 24, spd: 0.0003, col: "#D39C7E", ang: Math.random()*7 },
-            { id: 'sat', dist: 650, sz: 19, spd: 0.0002, col: "#C5AB6E", ang: Math.random()*7, rings: true }
+            { id: 'jup', dist: 530, sz: 28, spd: 0.0003, col: "#c3a48e", ang: Math.random()*7, bands: true }
         ];
         
         var worldGeo = null, featureIndex = {}, flashingISO = {}, comets = []; 
         var canvas = document.getElementById("main-canvas");
         var context = canvas.getContext("2d");
-        var w, h, isDragging = false, lastX, lastY, rotX = 0, rotY = -15, lastT = performance.now();
+        var w, h, isDragging = false, lastX, lastY, rotX = 0, rotY = TARGET_TILT, lastT = performance.now(), lastInteractionT = performance.now();
 
         function setSizes() { w = window.innerWidth; h = window.innerHeight; canvas.width = w; canvas.height = h; }
         setSizes();
@@ -135,8 +132,8 @@
         var projection = d3.geoOrthographic().scale(h / 2.8).translate([w * 0.74, h * 0.5]).clipAngle(90);
         var path = d3.geoPath(projection, context);
 
-        function hStart(x, y) { isDragging = true; lastX = x; lastY = y; }
-        function hMove(x, y) { if (isDragging) { rotX += (x - lastX)*0.3; rotY -= (y - lastY)*0.3; lastX = x; lastY = y; } }
+        function hStart(x, y) { isDragging = true; lastX = x; lastY = y; lastInteractionT = performance.now(); }
+        function hMove(x, y) { if (isDragging) { rotX += (x - lastX)*0.3; rotY -= (y - lastY)*0.3; lastX = x; lastY = y; lastInteractionT = performance.now(); } }
         canvas.addEventListener('mousedown', function(e) { hStart(e.clientX, e.clientY); });
         window.addEventListener('mousemove', function(e) { hMove(e.clientX, e.clientY); });
         window.addEventListener('mouseup', function() { isDragging = false; });
@@ -147,8 +144,7 @@
 
         function checkSleepMode() {
             var hr = new Date().getHours();
-            var overlay = document.getElementById('sleep-overlay');
-            if (hr >= 20 || hr < 6) { overlay.style.display = 'block'; } else { overlay.style.display = 'none'; }
+            document.getElementById('sleep-overlay').style.display = (hr >= 20 || hr < 6) ? 'block' : 'none';
         }
         setInterval(checkSleepMode, 60000);
 
@@ -157,8 +153,7 @@
                 worldGeo = data;
                 for(var i=0; i<data.features.length; i++) {
                     var f = data.features[i];
-                    var iso = f.properties.ISO_A3 || f.properties.ADM0_A3;
-                    featureIndex[iso] = f;
+                    featureIndex[f.properties.ISO_A3 || f.properties.ADM0_A3] = f;
                 }
                 document.getElementById('loading').style.display = 'none';
                 checkSleepMode();
@@ -169,15 +164,19 @@
 
         function renderLoop(time) {
             var dt = time - lastT; lastT = time;
-            if (!isDragging) rotX += EARTH_ROT_SPD * dt;
+            
+            if (!isDragging && (time - lastInteractionT > RESUME_DELAY)) {
+                rotX += EARTH_ROT_SPD * dt;
+                if (Math.abs(rotY - TARGET_TILT) > 0.1) rotY += (TARGET_TILT - rotY) * 0.02;
+            }
+
             projection.rotate([rotX, rotY]);
             context.clearRect(0, 0, w, h);
-
             var ex = w * 0.74, ey = h * 0.5;
 
             updateComets();
 
-            // 1. Draw Sun
+            // 1. Sun
             var sAng = time * 0.00003;
             var sx = ex + Math.cos(sAng) * (w * 0.55);
             var sy = ey + Math.sin(sAng) * (h * 0.4);
@@ -185,15 +184,16 @@
             sGrad.addColorStop(0, "#ffffff"); sGrad.addColorStop(0.3, "#fbbf24"); sGrad.addColorStop(1, "transparent");
             context.beginPath(); context.arc(sx, sy, 60, 0, 7); context.fillStyle = sGrad; context.fill();
 
-            // 2. Draw Realistic Moon
-            drawSatellite(moon, ex, ey, sx, sy, dt, true);
+            // 2. Realistic Saturn
+            drawRealisticSaturn(sx, sy, ex, ey, dt);
 
-            // 3. Draw Planets
-            for(var i=0; i<planets.length; i++) {
-                drawSatellite(planets[i], ex, ey, sx, sy, dt, false);
-            }
+            // 3. Realistic Moon
+            drawPhotorealisticMoon(sx, sy, ex, ey, dt);
 
-            // 4. Draw Earth
+            // 4. Planets
+            for(var i=0; i<planets.length; i++) drawPlanet(planets[i], ex, ey, sx, sy, dt);
+
+            // 5. Earth
             var center = projection.translate(), radius = projection.scale(), theme = globeThemes[currentThemeIdx];
             var oceanGrad = context.createRadialGradient(center[0]-radius/2.5, center[1]-radius/2.5, radius/20, center[0], center[1], radius);
             oceanGrad.addColorStop(0, "#3b82f6"); oceanGrad.addColorStop(0.5, theme.ocean); oceanGrad.addColorStop(1, "#020617");
@@ -218,37 +218,95 @@
             requestAnimationFrame(renderLoop);
         }
 
-        function drawSatellite(p, ex, ey, sx, sy, dt, isMoon) {
-            p.ang += p.spd * dt * 0.1;
-            var px = ex + Math.cos(p.ang) * p.dist;
-            var py = ey + Math.sin(p.ang) * p.dist * 0.7;
+        function drawPhotorealisticMoon(sx, sy, ex, ey, dt) {
+            moon.ang += moon.spd * dt * 0.1;
+            var px = ex + Math.cos(moon.ang) * moon.dist;
+            var py = ey + Math.sin(moon.ang) * moon.dist * 0.7;
+            var dx = px - sx, dy = py - sy, angToSun = Math.atan2(dy, dx);
 
             context.save();
             context.translate(px, py);
+            
+            // Base Shading
+            var pGrad = context.createRadialGradient(-moon.sz*0.3, -moon.sz*0.3, 0, 0, 0, moon.sz);
+            pGrad.addColorStop(0, moon.col); pGrad.addColorStop(1, "#000000");
+            context.beginPath(); context.arc(0, 0, moon.sz, 0, 7);
+            context.fillStyle = pGrad; context.fill();
 
-            if (p.rings) {
-                context.beginPath(); context.ellipse(0, 0, p.sz*2.4, p.sz*0.8, 0.4, 0, 7);
-                context.strokeStyle = "rgba(216, 174, 141, 0.2)"; context.lineWidth = 4; context.stroke();
+            // Lunar Maria (The dark patches)
+            context.clip();
+            context.fillStyle = "rgba(30, 41, 59, 0.4)";
+            for(var i=0; i<6; i++) {
+                context.beginPath();
+                context.ellipse(Math.sin(i)*20, Math.cos(i)*15, 25, 15, i, 0, 7);
+                context.fill();
             }
+            // Small bright craters
+            context.fillStyle = "rgba(255,255,255,0.2)";
+            for(var j=0; j<10; j++) {
+                context.beginPath(); context.arc(Math.cos(j)*30, Math.sin(j)*20, 2, 0, 7); context.fill();
+            }
+            context.restore();
 
+            // Shadow
+            var shad = context.createRadialGradient(px + Math.cos(angToSun)*moon.sz*0.5, py + Math.sin(angToSun)*moon.sz*0.5, 0, px, py, moon.sz);
+            shad.addColorStop(0, "rgba(0,0,0,0)"); shad.addColorStop(1, "rgba(0,0,0,0.95)");
+            context.beginPath(); context.arc(px, py, moon.sz + 0.5, 0, 7);
+            context.fillStyle = shad; context.fill();
+        }
+
+        function drawRealisticSaturn(sx, sy, ex, ey, dt) {
+            saturn.ang += saturn.spd * dt * 0.1;
+            var px = ex + Math.cos(saturn.ang) * saturn.dist;
+            var py = ey + Math.sin(saturn.ang) * saturn.dist * 0.65;
             var dx = px - sx, dy = py - sy, angToSun = Math.atan2(dy, dx);
+
+            context.save();
+            context.translate(px, py);
+            
+            // RINGS (Multi-layered translucent)
+            context.globalAlpha = 0.6;
+            for(var r=0; r<10; r++) {
+                context.beginPath(); context.ellipse(0, 0, saturn.sz*(1.8+r*0.1), saturn.sz*(0.6+r*0.03), 0.4, 0, 7);
+                context.strokeStyle = (r === 4) ? "rgba(0,0,0,0.5)" : "rgba(216, 174, 141, 0.2)";
+                context.lineWidth = 3; context.stroke();
+            }
+            context.globalAlpha = 1.0;
+
+            // BODY
+            var pGrad = context.createRadialGradient(-saturn.sz*0.3, -saturn.sz*0.3, 0, 0, 0, saturn.sz);
+            pGrad.addColorStop(0, saturn.col); pGrad.addColorStop(1, "#1a0f08");
+            context.beginPath(); context.arc(0, 0, saturn.sz, 0, 7);
+            context.fillStyle = pGrad; context.fill();
+
+            // Bands
+            context.clip();
+            for(var k=-saturn.sz; k<saturn.sz; k+=6) {
+                context.beginPath(); context.moveTo(-saturn.sz, k);
+                context.bezierCurveTo(-saturn.sz/2, k-2, saturn.sz/2, k+2, saturn.sz, k);
+                context.strokeStyle = "rgba(100,60,30,0.2)"; context.lineWidth = 4; context.stroke();
+            }
+            context.restore();
+
+            // Shadow
+            var shad = context.createRadialGradient(px + Math.cos(angToSun)*saturn.sz*0.5, py + Math.sin(angToSun)*saturn.sz*0.5, 0, px, py, saturn.sz);
+            shad.addColorStop(0, "rgba(0,0,0,0)"); shad.addColorStop(1, "rgba(0,0,0,0.9)");
+            context.beginPath(); context.arc(px, py, saturn.sz + 0.5, 0, 7);
+            context.fillStyle = shad; context.fill();
+        }
+
+        function drawPlanet(p, ex, ey, sx, sy, dt) {
+            p.ang += p.spd * dt * 0.1;
+            var px = ex + Math.cos(p.ang) * p.dist;
+            var py = ey + Math.sin(p.ang) * p.dist * 0.7;
+            var dx = px - sx, dy = py - sy, angToSun = Math.atan2(dy, dx);
+            context.save();
+            context.translate(px, py);
             var pGrad = context.createRadialGradient(-p.sz*0.3, -p.sz*0.3, 0, 0, 0, p.sz);
             pGrad.addColorStop(0, p.col); pGrad.addColorStop(1, "#000000");
             context.beginPath(); context.arc(0, 0, p.sz, 0, 7);
             context.fillStyle = pGrad; context.fill();
-
-            // Moon Surface Realism
-            if (isMoon) {
-                context.clip();
-                context.fillStyle = "rgba(0,0,0,0.15)";
-                for(var i=0; i<15; i++) {
-                    context.beginPath(); 
-                    context.arc(Math.sin(i*2)*p.sz, Math.cos(i*3)*p.sz, Math.random()*6+2, 0, 7); 
-                    context.fill();
-                }
-            }
             context.restore();
-
             var shad = context.createRadialGradient(px + Math.cos(angToSun)*p.sz*0.5, py + Math.sin(angToSun)*p.sz*0.5, 0, px, py, p.sz);
             shad.addColorStop(0, "rgba(0,0,0,0)"); shad.addColorStop(1, "rgba(0,0,0,0.9)");
             context.beginPath(); context.arc(px, py, p.sz + 0.5, 0, 7);
@@ -283,9 +341,8 @@
                 document.getElementById('clock').innerText = now.toLocaleTimeString('en-GB');
                 document.getElementById('bar').style.width = (elapsed / 86400 * 100) + "%";
                 if (worldGeo) {
-                    var idx = Math.floor(Math.random() * worldGeo.features.length);
-                    var iso = worldGeo.features[idx].properties.ISO_A3 || worldGeo.features[idx].properties.ADM0_A3;
-                    flashingISO[iso] = Date.now();
+                    var keys = Object.keys(featureIndex);
+                    flashingISO[keys[Math.floor(Math.random()*keys.length)]] = Date.now();
                 }
             }, 1000 / BIRTH_RATE);
         }
