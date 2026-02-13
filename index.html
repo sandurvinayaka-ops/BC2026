@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Birth Pulse - Cinematic TV Pro V73</title>
+    <title>Birth Pulse - Cinematic TV Pro V74</title>
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -54,12 +54,13 @@
             position: absolute; bottom: 8vh; left: 5vw; 
             width: 38vw; z-index: 100; text-align: left;
         }
-        .label { font-size: 1.2vw; color: #38bdf8; text-transform: uppercase; font-weight: 900; letter-spacing: 3px; }
+        /* FONT SIZE INCREASED 1.5X */
+        .label { font-size: 1.8vw; color: #38bdf8; text-transform: uppercase; font-weight: 900; letter-spacing: 3px; }
         .count { font-size: 8.5vw; font-weight: 900; color: #fbbf24; line-height: 1.1; margin: 5px 0; }
         
         .progress-ui { width: 90%; margin-top: 10px; }
         .time-labels { display: flex; justify-content: space-between; width: 100%; margin-bottom: 4px; }
-        .marker-text { color: #38bdf8; font-size: 1vw; font-weight: bold; opacity: 0.8; }
+        .marker-text { color: #38bdf8; font-size: 1.2vw; font-weight: bold; opacity: 0.8; }
         .bar-wrapper { width: 100%; height: 14px; background: rgba(255,255,255,0.05); border-radius: 20px; overflow: hidden; }
         .bar-fill { height: 100%; width: 0%; background: #fbbf24; }
         #clock { color: #fbbf24; font-size: 1.8vw; font-weight: bold; display: block; text-align: center; margin-top: 12px; letter-spacing: 2px;}
@@ -77,7 +78,7 @@
 </head>
 <body>
 
-    <div id="loading">CALIBRATING LUNAR ORBIT...</div>
+    <div id="loading">CALIBRATING LUNAR SCALE...</div>
     <div id="sleep-overlay"></div>
     
     <div class="header-box">
@@ -107,21 +108,20 @@
         
         var globeThemes = [
             { land: "#10b981", flash: "#ffffff", ocean: "#0a192f" },
-            { land: "#fb7185", flash: "#ffffff", ocean: "#1e0108" },
+            { land: "#f43f5e", flash: "#ffffff", ocean: "#1e0108" },
             { land: "#0ea5e9", flash: "#fbbf24", ocean: "#082f49" },
             { land: "#eab308", flash: "#a855f7", ocean: "#1e0a01" }
         ];
         var currentThemeIdx = 0;
 
-        // Realistic Moon & Planets
-        var moon = { dist: 105, sz: 8, spd: 0.0018, col: "#d1d5db", ang: Math.random()*7 };
+        // Realistic Moon (Large) & Planets
+        var moon = { id: 'moon', dist: 380, sz: 60, spd: 0.0012, col: "#94a3b8", ang: Math.random()*7 };
         var planets = [
-            { id: 'mer', dist: 145, sz: 6, spd: 0.0008, col: "#A5A5A5", ang: Math.random()*7 },
-            { id: 'ven', dist: 195, sz: 12, spd: 0.0006, col: "#E3BB76", ang: Math.random()*7 },
-            { id: 'mar', dist: 260, sz: 10, spd: 0.0005, col: "#EF4444", ang: Math.random()*7 },
-            { id: 'jup', dist: 350, sz: 24, spd: 0.0003, col: "#D39C7E", ang: Math.random()*7 },
-            { id: 'sat', dist: 460, sz: 19, spd: 0.0002, col: "#C5AB6E", ang: Math.random()*7, rings: true },
-            { id: 'ura', dist: 550, sz: 14, spd: 0.0001, col: "#B5E3E3", ang: Math.random()*7 }
+            { id: 'mer', dist: 130, sz: 6, spd: 0.0008, col: "#A5A5A5", ang: Math.random()*7 },
+            { id: 'ven', dist: 190, sz: 12, spd: 0.0006, col: "#E3BB76", ang: Math.random()*7 },
+            { id: 'mar', dist: 250, sz: 10, spd: 0.0005, col: "#EF4444", ang: Math.random()*7 },
+            { id: 'jup', dist: 530, sz: 24, spd: 0.0003, col: "#D39C7E", ang: Math.random()*7 },
+            { id: 'sat', dist: 650, sz: 19, spd: 0.0002, col: "#C5AB6E", ang: Math.random()*7, rings: true }
         ];
         
         var worldGeo = null, featureIndex = {}, flashingISO = {}, comets = []; 
@@ -145,18 +145,12 @@
 
         setInterval(function() { currentThemeIdx = (currentThemeIdx + 1) % globeThemes.length; }, 180000);
 
-        // --- THE SLEEP TIMER LOGIC ---
         function checkSleepMode() {
-            var hour = new Date().getHours();
+            var hr = new Date().getHours();
             var overlay = document.getElementById('sleep-overlay');
-            // Sleep from 8:00 PM (20) to 6:00 AM (6)
-            if (hour >= 20 || hour < 6) {
-                overlay.style.display = 'block';
-            } else {
-                overlay.style.display = 'none';
-            }
+            if (hr >= 20 || hr < 6) { overlay.style.display = 'block'; } else { overlay.style.display = 'none'; }
         }
-        setInterval(checkSleepMode, 30000); // Check every 30 seconds
+        setInterval(checkSleepMode, 60000);
 
         function init() {
             d3.json("https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_admin_0_countries.geojson").then(function(data) {
@@ -181,26 +175,25 @@
 
             var ex = w * 0.74, ey = h * 0.5;
 
-            // 1. Multi-Directional Comets
             updateComets();
 
-            // 2. Draw Sun
+            // 1. Draw Sun
             var sAng = time * 0.00003;
-            var sx = ex + Math.cos(sAng) * (w * 0.45);
-            var sy = ey + Math.sin(sAng) * (h * 0.35);
+            var sx = ex + Math.cos(sAng) * (w * 0.55);
+            var sy = ey + Math.sin(sAng) * (h * 0.4);
             var sGrad = context.createRadialGradient(sx, sy, 0, sx, sy, 60);
             sGrad.addColorStop(0, "#ffffff"); sGrad.addColorStop(0.3, "#fbbf24"); sGrad.addColorStop(1, "transparent");
             context.beginPath(); context.arc(sx, sy, 60, 0, 7); context.fillStyle = sGrad; context.fill();
 
-            // 3. Draw Moon (Close Up Realistic)
+            // 2. Draw Realistic Moon
             drawSatellite(moon, ex, ey, sx, sy, dt, true);
 
-            // 4. Draw Other Planets
+            // 3. Draw Planets
             for(var i=0; i<planets.length; i++) {
                 drawSatellite(planets[i], ex, ey, sx, sy, dt, false);
             }
 
-            // 5. Draw Earth
+            // 4. Draw Earth
             var center = projection.translate(), radius = projection.scale(), theme = globeThemes[currentThemeIdx];
             var oceanGrad = context.createRadialGradient(center[0]-radius/2.5, center[1]-radius/2.5, radius/20, center[0], center[1], radius);
             oceanGrad.addColorStop(0, "#3b82f6"); oceanGrad.addColorStop(0.5, theme.ocean); oceanGrad.addColorStop(1, "#020617");
@@ -228,7 +221,7 @@
         function drawSatellite(p, ex, ey, sx, sy, dt, isMoon) {
             p.ang += p.spd * dt * 0.1;
             var px = ex + Math.cos(p.ang) * p.dist;
-            var py = ey + Math.sin(p.ang) * p.dist * 0.65;
+            var py = ey + Math.sin(p.ang) * p.dist * 0.7;
 
             context.save();
             context.translate(px, py);
@@ -238,24 +231,24 @@
                 context.strokeStyle = "rgba(216, 174, 141, 0.2)"; context.lineWidth = 4; context.stroke();
             }
 
-            // Body Gradient
             var dx = px - sx, dy = py - sy, angToSun = Math.atan2(dy, dx);
             var pGrad = context.createRadialGradient(-p.sz*0.3, -p.sz*0.3, 0, 0, 0, p.sz);
             pGrad.addColorStop(0, p.col); pGrad.addColorStop(1, "#000000");
             context.beginPath(); context.arc(0, 0, p.sz, 0, 7);
             context.fillStyle = pGrad; context.fill();
 
-            // Moon Craters (Close up detail)
+            // Moon Surface Realism
             if (isMoon) {
                 context.clip();
-                context.fillStyle = "rgba(0,0,0,0.2)";
-                for(var i=0; i<5; i++) {
-                    context.beginPath(); context.arc((i-2)*2, Math.sin(i)*3, 2, 0, 7); context.fill();
+                context.fillStyle = "rgba(0,0,0,0.15)";
+                for(var i=0; i<15; i++) {
+                    context.beginPath(); 
+                    context.arc(Math.sin(i*2)*p.sz, Math.cos(i*3)*p.sz, Math.random()*6+2, 0, 7); 
+                    context.fill();
                 }
             }
             context.restore();
 
-            // Shadow
             var shad = context.createRadialGradient(px + Math.cos(angToSun)*p.sz*0.5, py + Math.sin(angToSun)*p.sz*0.5, 0, px, py, p.sz);
             shad.addColorStop(0, "rgba(0,0,0,0)"); shad.addColorStop(1, "rgba(0,0,0,0.9)");
             context.beginPath(); context.arc(px, py, p.sz + 0.5, 0, 7);
@@ -264,8 +257,7 @@
 
         function updateComets() {
             if (Math.random() > 0.996) {
-                var s = Math.floor(Math.random()*4);
-                var cx, cy, cvx, cvy;
+                var s = Math.floor(Math.random()*4), cx, cy, cvx, cvy;
                 if(s==0){cx=Math.random()*w; cy=-50; cvx=(Math.random()-0.5)*10; cvy=8+Math.random()*8;}
                 else if(s==1){cx=Math.random()*w; cy=h+50; cvx=(Math.random()-0.5)*10; cvy=-(8+Math.random()*8);}
                 else if(s==2){cx=-50; cy=Math.random()*h; cvx=8+Math.random()*8; cvy=(Math.random()-0.5)*10;}
