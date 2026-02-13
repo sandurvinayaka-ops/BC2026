@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Birth Pulse - Cinematic TV Pro V77</title>
+    <title>Birth Pulse - Cinematic TV Pro V78</title>
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -75,7 +75,7 @@
 </head>
 <body>
 
-    <div id="loading">GENERATING HI-RES PLANETARY BIOMES...</div>
+    <div id="loading">OPTIMIZING AUTO-ROTATION ENGINE...</div>
     <div id="sleep-overlay"></div>
     
     <div class="header-box">
@@ -114,17 +114,17 @@
         var currentThemeIdx = 0;
 
         // HI-RES PROCEDURAL PLANET DATA
-        var moon = { dist: 380, sz: 60, spd: 0.0012, ang: Math.random()*7, col: "#94a3b8" };
+        var moon = { dist: 380, sz: 60, spd: 0.0012, ang: Math.random()*7, col: "#cbd5e1" };
         var saturn = { dist: 650, sz: 32, spd: 0.0002, ang: Math.random()*7, col: "#d8ae8d" };
         var planets = [
             { id: 'mer', dist: 130, sz: 6, spd: 0.0008, col: "#A5A5A5", ang: Math.random()*7 },
-            { id: 'jup', dist: 530, sz: 28, spd: 0.0003, col: "#c3a48e", ang: Math.random()*7, bands: true }
+            { id: 'jup', dist: 530, sz: 28, spd: 0.0003, col: "#c3a48e", ang: Math.random()*7 }
         ];
         
         var worldGeo = null, featureIndex = {}, flashingISO = {}, comets = []; 
         var canvas = document.getElementById("main-canvas");
         var context = canvas.getContext("2d");
-        var w, h, isDragging = false, lastX, lastY, rotX = 0, rotY = TARGET_TILT, lastT = performance.now(), lastInteractionT = performance.now();
+        var w, h, isDragging = false, lastX, lastY, rotX = 0, rotY = TARGET_TILT, lastT = Date.now(), lastInteractionT = Date.now();
 
         function setSizes() { w = window.innerWidth; h = window.innerHeight; canvas.width = w; canvas.height = h; }
         setSizes();
@@ -132,13 +132,18 @@
         var projection = d3.geoOrthographic().scale(h / 2.8).translate([w * 0.74, h * 0.5]).clipAngle(90);
         var path = d3.geoPath(projection, context);
 
-        function hStart(x, y) { isDragging = true; lastX = x; lastY = y; lastInteractionT = performance.now(); }
-        function hMove(x, y) { if (isDragging) { rotX += (x - lastX)*0.3; rotY -= (y - lastY)*0.3; lastX = x; lastY = y; lastInteractionT = performance.now(); } }
+        // Interaction Handlers
+        function onAction() { lastInteractionT = Date.now(); }
+        function hStart(x, y) { isDragging = true; lastX = x; lastY = y; onAction(); }
+        function hMove(x, y) { if (isDragging) { rotX += (x - lastX)*0.3; rotY -= (y - lastY)*0.3; lastX = x; lastY = y; onAction(); } }
+        function hEnd() { isDragging = false; onAction(); }
+
         canvas.addEventListener('mousedown', function(e) { hStart(e.clientX, e.clientY); });
         window.addEventListener('mousemove', function(e) { hMove(e.clientX, e.clientY); });
-        window.addEventListener('mouseup', function() { isDragging = false; });
+        window.addEventListener('mouseup', hEnd);
         canvas.addEventListener('touchstart', function(e) { e.preventDefault(); hStart(e.touches[0].clientX, e.touches[0].clientY); }, {passive: false});
         window.addEventListener('touchmove', function(e) { e.preventDefault(); hMove(e.touches[0].clientX, e.touches[0].clientY); }, {passive: false});
+        window.addEventListener('touchend', hEnd);
 
         setInterval(function() { currentThemeIdx = (currentThemeIdx + 1) % globeThemes.length; }, 180000);
 
@@ -146,7 +151,7 @@
             var hr = new Date().getHours();
             document.getElementById('sleep-overlay').style.display = (hr >= 20 || hr < 6) ? 'block' : 'none';
         }
-        setInterval(checkSleepMode, 60000);
+        setInterval(checkSleepMode, 30000);
 
         function init() {
             d3.json("https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_admin_0_countries.geojson").then(function(data) {
@@ -162,12 +167,22 @@
             });
         }
 
-        function renderLoop(time) {
-            var dt = time - lastT; lastT = time;
+        function renderLoop() {
+            var now = Date.now();
+            var dt = now - lastT;
+            lastT = now;
             
-            if (!isDragging && (time - lastInteractionT > RESUME_DELAY)) {
-                rotX += EARTH_ROT_SPD * dt;
-                if (Math.abs(rotY - TARGET_TILT) > 0.1) rotY += (TARGET_TILT - rotY) * 0.02;
+            // --- AUTO RESUME ENGINE ---
+            if (!isDragging) {
+                if (now - lastInteractionT > RESUME_DELAY) {
+                    rotX += EARTH_ROT_SPD * dt;
+                    // Vertical Realignment logic
+                    if (Math.abs(rotY - TARGET_TILT) > 0.1) {
+                        rotY += (TARGET_TILT - rotY) * 0.02;
+                    } else {
+                        rotY = TARGET_TILT;
+                    }
+                }
             }
 
             projection.rotate([rotX, rotY]);
@@ -176,24 +191,24 @@
 
             updateComets();
 
-            // 1. Sun
-            var sAng = time * 0.00003;
+            // 1. Draw Sun
+            var sAng = now * 0.00003;
             var sx = ex + Math.cos(sAng) * (w * 0.55);
             var sy = ey + Math.sin(sAng) * (h * 0.4);
             var sGrad = context.createRadialGradient(sx, sy, 0, sx, sy, 60);
             sGrad.addColorStop(0, "#ffffff"); sGrad.addColorStop(0.3, "#fbbf24"); sGrad.addColorStop(1, "transparent");
             context.beginPath(); context.arc(sx, sy, 60, 0, 7); context.fillStyle = sGrad; context.fill();
 
-            // 2. Realistic Saturn
-            drawRealisticSaturn(sx, sy, ex, ey, dt);
+            // 2. Draw High-Detail Saturn
+            drawRealisticSaturn(sx, sy, ex, ey, dt, now);
 
-            // 3. Realistic Moon
-            drawPhotorealisticMoon(sx, sy, ex, ey, dt);
+            // 3. Draw Photorealistic Moon
+            drawPhotorealisticMoon(sx, sy, ex, ey, dt, now);
 
-            // 4. Planets
-            for(var i=0; i<planets.length; i++) drawPlanet(planets[i], ex, ey, sx, sy, dt);
+            // 4. Draw Other Planets
+            for(var i=0; i<planets.length; i++) drawPlanet(planets[i], ex, ey, sx, sy, dt, now);
 
-            // 5. Earth
+            // 5. Draw Earth
             var center = projection.translate(), radius = projection.scale(), theme = globeThemes[currentThemeIdx];
             var oceanGrad = context.createRadialGradient(center[0]-radius/2.5, center[1]-radius/2.5, radius/20, center[0], center[1], radius);
             oceanGrad.addColorStop(0, "#3b82f6"); oceanGrad.addColorStop(0.5, theme.ocean); oceanGrad.addColorStop(1, "#020617");
@@ -205,7 +220,7 @@
                 context.fillStyle = theme.land; context.fill();
                 context.strokeStyle = "rgba(255, 255, 255, 0.3)"; context.lineWidth = 0.6; context.stroke();
                 for (var iso in flashingISO) {
-                    if (Date.now() - flashingISO[iso] < 1500) {
+                    if (now - flashingISO[iso] < 1500) {
                         var feat = featureIndex[iso];
                         if(feat) {
                             context.beginPath(); path(feat);
@@ -218,53 +233,32 @@
             requestAnimationFrame(renderLoop);
         }
 
-        function drawPhotorealisticMoon(sx, sy, ex, ey, dt) {
+        function drawPhotorealisticMoon(sx, sy, ex, ey, dt, t) {
             moon.ang += moon.spd * dt * 0.1;
             var px = ex + Math.cos(moon.ang) * moon.dist;
             var py = ey + Math.sin(moon.ang) * moon.dist * 0.7;
             var dx = px - sx, dy = py - sy, angToSun = Math.atan2(dy, dx);
-
             context.save();
             context.translate(px, py);
-            
-            // Base Shading
             var pGrad = context.createRadialGradient(-moon.sz*0.3, -moon.sz*0.3, 0, 0, 0, moon.sz);
             pGrad.addColorStop(0, moon.col); pGrad.addColorStop(1, "#000000");
-            context.beginPath(); context.arc(0, 0, moon.sz, 0, 7);
-            context.fillStyle = pGrad; context.fill();
-
-            // Lunar Maria (The dark patches)
+            context.beginPath(); context.arc(0, 0, moon.sz, 0, 7); context.fillStyle = pGrad; context.fill();
             context.clip();
             context.fillStyle = "rgba(30, 41, 59, 0.4)";
-            for(var i=0; i<6; i++) {
-                context.beginPath();
-                context.ellipse(Math.sin(i)*20, Math.cos(i)*15, 25, 15, i, 0, 7);
-                context.fill();
-            }
-            // Small bright craters
-            context.fillStyle = "rgba(255,255,255,0.2)";
-            for(var j=0; j<10; j++) {
-                context.beginPath(); context.arc(Math.cos(j)*30, Math.sin(j)*20, 2, 0, 7); context.fill();
-            }
+            for(var i=0; i<6; i++) { context.beginPath(); context.ellipse(Math.sin(i)*20, Math.cos(i)*15, 25, 15, i, 0, 7); context.fill(); }
             context.restore();
-
-            // Shadow
             var shad = context.createRadialGradient(px + Math.cos(angToSun)*moon.sz*0.5, py + Math.sin(angToSun)*moon.sz*0.5, 0, px, py, moon.sz);
             shad.addColorStop(0, "rgba(0,0,0,0)"); shad.addColorStop(1, "rgba(0,0,0,0.95)");
-            context.beginPath(); context.arc(px, py, moon.sz + 0.5, 0, 7);
-            context.fillStyle = shad; context.fill();
+            context.beginPath(); context.arc(px, py, moon.sz + 0.5, 0, 7); context.fillStyle = shad; context.fill();
         }
 
-        function drawRealisticSaturn(sx, sy, ex, ey, dt) {
+        function drawRealisticSaturn(sx, sy, ex, ey, dt, t) {
             saturn.ang += saturn.spd * dt * 0.1;
             var px = ex + Math.cos(saturn.ang) * saturn.dist;
             var py = ey + Math.sin(saturn.ang) * saturn.dist * 0.65;
             var dx = px - sx, dy = py - sy, angToSun = Math.atan2(dy, dx);
-
             context.save();
             context.translate(px, py);
-            
-            // RINGS (Multi-layered translucent)
             context.globalAlpha = 0.6;
             for(var r=0; r<10; r++) {
                 context.beginPath(); context.ellipse(0, 0, saturn.sz*(1.8+r*0.1), saturn.sz*(0.6+r*0.03), 0.4, 0, 7);
@@ -272,30 +266,16 @@
                 context.lineWidth = 3; context.stroke();
             }
             context.globalAlpha = 1.0;
-
-            // BODY
             var pGrad = context.createRadialGradient(-saturn.sz*0.3, -saturn.sz*0.3, 0, 0, 0, saturn.sz);
             pGrad.addColorStop(0, saturn.col); pGrad.addColorStop(1, "#1a0f08");
-            context.beginPath(); context.arc(0, 0, saturn.sz, 0, 7);
-            context.fillStyle = pGrad; context.fill();
-
-            // Bands
-            context.clip();
-            for(var k=-saturn.sz; k<saturn.sz; k+=6) {
-                context.beginPath(); context.moveTo(-saturn.sz, k);
-                context.bezierCurveTo(-saturn.sz/2, k-2, saturn.sz/2, k+2, saturn.sz, k);
-                context.strokeStyle = "rgba(100,60,30,0.2)"; context.lineWidth = 4; context.stroke();
-            }
+            context.beginPath(); context.arc(0, 0, saturn.sz, 0, 7); context.fillStyle = pGrad; context.fill();
             context.restore();
-
-            // Shadow
             var shad = context.createRadialGradient(px + Math.cos(angToSun)*saturn.sz*0.5, py + Math.sin(angToSun)*saturn.sz*0.5, 0, px, py, saturn.sz);
             shad.addColorStop(0, "rgba(0,0,0,0)"); shad.addColorStop(1, "rgba(0,0,0,0.9)");
-            context.beginPath(); context.arc(px, py, saturn.sz + 0.5, 0, 7);
-            context.fillStyle = shad; context.fill();
+            context.beginPath(); context.arc(px, py, saturn.sz + 0.5, 0, 7); context.fillStyle = shad; context.fill();
         }
 
-        function drawPlanet(p, ex, ey, sx, sy, dt) {
+        function drawPlanet(p, ex, ey, sx, sy, dt, t) {
             p.ang += p.spd * dt * 0.1;
             var px = ex + Math.cos(p.ang) * p.dist;
             var py = ey + Math.sin(p.ang) * p.dist * 0.7;
@@ -304,13 +284,11 @@
             context.translate(px, py);
             var pGrad = context.createRadialGradient(-p.sz*0.3, -p.sz*0.3, 0, 0, 0, p.sz);
             pGrad.addColorStop(0, p.col); pGrad.addColorStop(1, "#000000");
-            context.beginPath(); context.arc(0, 0, p.sz, 0, 7);
-            context.fillStyle = pGrad; context.fill();
+            context.beginPath(); context.arc(0, 0, p.sz, 0, 7); context.fillStyle = pGrad; context.fill();
             context.restore();
             var shad = context.createRadialGradient(px + Math.cos(angToSun)*p.sz*0.5, py + Math.sin(angToSun)*p.sz*0.5, 0, px, py, p.sz);
             shad.addColorStop(0, "rgba(0,0,0,0)"); shad.addColorStop(1, "rgba(0,0,0,0.9)");
-            context.beginPath(); context.arc(px, py, p.sz + 0.5, 0, 7);
-            context.fillStyle = shad; context.fill();
+            context.beginPath(); context.arc(px, py, p.sz + 0.5, 0, 7); context.fillStyle = shad; context.fill();
         }
 
         function updateComets() {
@@ -326,8 +304,8 @@
                 var c = comets[i];
                 var g = context.createLinearGradient(c.x, c.y, c.x - c.vx*12, c.y - c.vy*12);
                 g.addColorStop(0, "white"); g.addColorStop(1, "transparent");
-                context.strokeStyle = g; context.lineWidth = 4; context.lineCap = "round";
-                context.beginPath(); context.moveTo(c.x, c.y); context.lineTo(c.x - c.vx*15, c.y - c.vy*15); context.stroke();
+                context.strokeStyle = g; context.lineWidth = 4; context.beginPath();
+                context.moveTo(c.x, c.y); context.lineTo(c.x - c.vx*15, c.y - c.vy*15); context.stroke();
                 c.x += c.vx; c.y += c.vy; c.life -= 0.008;
                 if(c.life <= 0) { comets.splice(i, 1); i--; }
             }
