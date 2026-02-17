@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Birth Pulse - Cinematic TV Pro V78</title>
+    <title>Birth Pulse - Cinematic TV Pro V82</title>
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -15,74 +15,108 @@
         }
         body:active { cursor: grabbing; }
 
-        /* 1. SLEEP MODE OVERLAY */
-        #sleep-overlay {
+        /* 1. SLEEP & QUIZ OVERLAYS */
+        #sleep-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #000000; z-index: 9999; display: none; }
+        
+        #quiz-overlay {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: #000000; z-index: 9999; display: none;
+            background: rgba(0,0,0,0.9); z-index: 2000; display: none;
+            align-items: center; justify-content: center; pointer-events: auto;
         }
+        .quiz-card {
+            background: rgba(15, 23, 42, 0.98); border: 2px solid #a855f7;
+            padding: 40px; border-radius: 20px; width: 60vw; text-align: center;
+            box-shadow: 0 0 50px rgba(168, 85, 247, 0.5);
+        }
+        .option-btn {
+            display: block; width: 100%; padding: 15px; margin: 12px 0;
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 10px; font-size: 1.4vw; font-weight: bold; cursor: pointer; transition: 0.3s;
+        }
+        .option-btn:hover { background: #0b5ed7; border-color: white; }
+        #quiz-feedback { font-size: 2.2vw; font-weight: 800; margin-top: 20px; line-height: 1.4; }
 
-        /* 2. BACKGROUND STARS */
-        .stars-container {
-            position: absolute; width: 100%; height: 100%;
-            z-index: 1; pointer-events: none;
+        /* 2. KNOWLEDGE BUTTON */
+        .knowledge-btn {
+            position: absolute; bottom: 5vh; right: 5vw; z-index: 1000;
+            padding: 15px 30px; background: rgba(109, 40, 217, 0.5);
+            border: 2px solid #fbbf24; border-radius: 50px; color: white;
+            font-weight: 800; font-size: 1.2vw; text-transform: uppercase;
+            letter-spacing: 2px; cursor: pointer; pointer-events: auto;
+            animation: btn-pulse 2.5s infinite;
         }
-        .star {
-            position: absolute; background: white; border-radius: 50%;
-            animation: blink var(--t) infinite ease-in-out;
-        }
-        @keyframes blink { 0%, 100% { opacity: 0.1; transform: scale(0.8); } 50% { opacity: 0.8; } }
+        @keyframes btn-pulse { 0%, 100% { box-shadow: 0 0 15px rgba(168, 85, 247, 0.4); } 50% { box-shadow: 0 0 30px rgba(251, 191, 36, 0.5); } }
 
-        /* 3. PHILIPS LOGO & HEADER */
-        .header-box {
-            position: absolute; top: 5vh; left: 5vw;
-            z-index: 500; text-align: left;
+        /* 3. UI LAYOUT & SEQUENTIAL WORD PULSE */
+        .header-box { position: absolute; top: 5vh; left: 5vw; z-index: 500; text-align: left; }
+        .philips-title { 
+            font-size: 2.8vw; font-weight: 900; color: #0b5ed7; 
+            letter-spacing: -0.05vw; margin-bottom: 5px; text-transform: uppercase;
         }
-        .philips-logo-static { display: flex; margin-bottom: 5px; }
-        .philips-logo-static span {
-            font-size: 2.8vw; font-weight: 900; letter-spacing: -0.05vw;
-            color: #0b5ed7; text-transform: uppercase;
-        }
-        .main-heading {
+        
+        .main-heading { 
             font-size: 3.1vw; color: #a855f7; font-weight: 800; 
-            text-shadow: 0 0 30px rgba(168, 85, 247, 0.4); white-space: nowrap;
+            text-shadow: 0 0 30px rgba(168, 85, 247, 0.4); white-space: nowrap; 
         }
 
-        /* 4. STATS PANEL */
-        .stats-box { 
-            position: absolute; bottom: 8vh; left: 5vw; 
-            width: 38vw; z-index: 100; text-align: left;
+        /* Sequential word animation */
+        .main-heading span { display: inline-block; animation: wordPulse 3s infinite; transform-origin: center; }
+        @keyframes wordPulse {
+            0%, 20%, 100% { transform: scale(1); color: #a855f7; }
+            10% { transform: scale(1.2); color: #fbbf24; }
         }
+        /* Delay each word to create the "one after the other" effect */
+        .w1 { animation-delay: 0.0s !important; }
+        .w2 { animation-delay: 0.5s !important; }
+        .w3 { animation-delay: 1.0s !important; }
+        .w4 { animation-delay: 1.5s !important; }
+        .w5 { animation-delay: 2.0s !important; }
+        .w6 { animation-delay: 2.5s !important; }
+
+        .stats-box { position: absolute; bottom: 8vh; left: 5vw; width: 38vw; z-index: 100; text-align: left; }
         .label { font-size: 1.8vw; color: #38bdf8; text-transform: uppercase; font-weight: 900; letter-spacing: 3px; }
         .count { font-size: 8.5vw; font-weight: 900; color: #fbbf24; line-height: 1.1; margin: 5px 0; }
-        
         .progress-ui { width: 90%; margin-top: 10px; }
         .time-labels { display: flex; justify-content: space-between; width: 100%; margin-bottom: 4px; }
         .marker-text { color: #38bdf8; font-size: 1.2vw; font-weight: bold; opacity: 0.8; }
-        .bar-wrapper { width: 100%; height: 14px; background: rgba(255,255,255,0.05); border-radius: 20px; overflow: hidden; }
+        .bar-wrapper { width: 100%; height: 16px; background: rgba(255,255,255,0.05); border-radius: 20px; overflow: hidden; }
         .bar-fill { height: 100%; width: 0%; background: #fbbf24; }
-        #clock { color: #fbbf24; font-size: 1.8vw; font-weight: bold; display: block; text-align: center; margin-top: 12px; letter-spacing: 2px;}
+        #clock { color: #fbbf24; font-size: 1.8vw; font-weight: bold; display: block; text-align: center; margin-top: 12px; }
 
-        /* 5. CANVAS CONTAINER */
-        .canvas-container { position: absolute; left: 0; top: 0; width: 100vw; height: 100vh; z-index: 5; }
+        .stars-container { position: absolute; width: 100%; height: 100%; z-index: 1; pointer-events: none; }
+        .star { position: absolute; background: white; border-radius: 50%; animation: blink var(--t) infinite ease-in-out; }
+        @keyframes blink { 0%, 100% { opacity: 0.1; transform: scale(0.8); } 50% { opacity: 0.8; } }
+        
+        .canvas-container { position: absolute; left: 0; top: 0; width: 100vw; height: 100vh; z-index: 10; pointer-events: none; }
         #main-canvas { width: 100%; height: 100%; }
 
-        #loading {
-            position: absolute; width: 100%; height: 100%;
-            background: #000000; display: flex; align-items: center; 
-            justify-content: center; z-index: 2000; color: #38bdf8; font-size: 2.5vw;
-        }
+        #loading { position: absolute; width: 100%; height: 100%; background: #000000; display: flex; align-items: center; justify-content: center; z-index: 2000; color: #38bdf8; font-size: 2.5vw; }
     </style>
 </head>
 <body>
 
-    <div id="loading">OPTIMIZING AUTO-ROTATION ENGINE...</div>
+    <div id="loading">CALIBRATING SEQUENTIAL ANIMATIONS...</div>
     <div id="sleep-overlay"></div>
     
-    <div class="header-box">
-        <div class="philips-logo-static">
-            <span>P</span><span>H</span><span>I</span><span>L</span><span>I</span><span>P</span><span>S</span>
+    <div id="quiz-overlay">
+        <div class="quiz-card">
+            <h2 id="quiz-question" class="text-3xl font-bold mb-8 text-white">Question</h2>
+            <div id="quiz-options"></div>
+            <div id="quiz-feedback"></div>
         </div>
-        <h1 class="main-heading">Mother & Child Care-Women's Health</h1>
+    </div>
+
+    <button class="knowledge-btn" onclick="openQuiz()">Press here for some knowledge check</button>
+
+    <div class="header-box">
+        <div class="philips-title">PHILIPS</div>
+        <h1 class="main-heading">
+            <span class="w1">Mother</span> & 
+            <span class="w2">Child</span> 
+            <span class="w3">Care</span> — 
+            <span class="w4">Women's</span> 
+            <span class="w5">Health</span>
+        </h1>
     </div>
 
     <div class="stats-box">
@@ -99,53 +133,112 @@
     <div class="canvas-container"><canvas id="main-canvas"></canvas></div>
 
     <script>
-        // TV-SAFE ES5 SCRIPT
-        var BIRTH_RATE = 4.34;
-        var EARTH_ROT_SPD = 0.008; 
-        var RESUME_DELAY = 5000;
-        var TARGET_TILT = -15;
-        
-        var globeThemes = [
-            { land: "#10b981", flash: "#ffffff", ocean: "#0a192f" },
-            { land: "#fb7185", flash: "#ffffff", ocean: "#1e0108" },
-            { land: "#0ea5e9", flash: "#fbbf24", ocean: "#082f49" },
-            { land: "#eab308", flash: "#a855f7", ocean: "#1e0a01" }
+        // --- QUIZ DATA ---
+        var quizData = [
+            { q: "In which year was Philips founded?", o: ["1885", "1891", "1905", "1912"], a: 1 },
+            { q: "Philips was established in which country?", o: ["Germany", "USA", "Netherlands", "Sweden"], a: 2 },
+            { q: "Who founded Philips?", o: ["Gerard & Frederik", "Anton & Gerard", "Willem & Anton", "Gerard & Siemens"], a: 1 },
+            { q: "What was Philips’ first main product?", o: ["Radios", "Shavers", "Light Bulbs", "X-ray"], a: 2 },
+            { q: "In the 2010s, Philips shifted its primary focus to:", o: ["Electronics", "Healthcare technology", "Automotive", "Telecom"], a: 1 },
+            { q: "“Innovation with a purpose” primarily refers to:", o: ["Increasing profits", "Reducing competition", "Improving lives", "Expansion"], a: 2 },
+            { q: "Philips invests heavily in which area to drive innovation?", o: ["Advertising", "Retail", "R&D", "Real Estate"], a: 2 },
+            { q: "Digital transformation at Philips mainly supports:", o: ["Production", "Data-driven health", "Paper systems", "Lighting"], a: 1 },
+            { q: "Philips collaborates with hospitals to:", o: ["Sell furniture", "Develop patient tech", "Outsource", "Train accountants"], a: 1 },
+            { q: "Philips’ innovation strategy is mainly centered on:", o: ["Entertainment", "Fashion", "Health technology", "Gaming"], a: 2 },
+            { q: "Philips is well known for innovations in:", o: ["MRI systems", "Farming", "Autos", "Textiles"], a: 0 },
+            { q: "MRI technology is used to:", o: ["Measure temp", "Internal body images", "Water quality", "Batteries"], a: 1 },
+            { q: "CT scanners primarily help in:", o: ["Printing", "Brain training", "Diagnostic imaging", "Sound"], a: 2 },
+            { q: "Philips patient monitoring systems help to:", o: ["Entertain", "Track vital signs", "Replace doctors", "Schedule"], a: 1 },
+            { q: "Artificial Intelligence in Philips healthcare is used to:", o: ["Paperwork", "Clinical decisions", "Replace nurses", "Bulbs"], a: 1 },
+            { q: "Telehealth solutions enable:", o: ["Remote monitoring", "Construction", "Filing", "Billing"], a: 0 },
+            { q: "Ultrasound technology is mainly used for:", o: ["Cooking", "Weather", "Medical imaging", "Lighting"], a: 2 },
+            { q: "Philips cardiology solutions focus on:", o: ["Lungs", "Heart conditions", "Skin", "Dentistry"], a: 1 },
+            { q: "Philips IntelliSpace platform supports:", o: ["Gaming", "Clinical data", "Social media", "Shopping"], a: 1 },
+            { q: "Hospital workflow solutions improve:", o: ["Parking", "Clinical efficiency", "Menus", "Security"], a: 1 },
+            { q: "Philips originally became famous for producing:", o: ["Radios", "Electric bulbs", "TVs", "Batteries"], a: 1 },
+            { q: "LED lighting is known for being:", o: ["Energy-efficient", "Fragile", "Expensive", "Hot"], a: 0 },
+            { q: "Smart lighting allows users to:", o: ["Remote settings", "Waste power", "Break bulbs", "Print"], a: 0 },
+            { q: "Philips Hue enables control of lighting via:", o: ["App or Voice", "Manual only", "Manuals", "Wires"], a: 0 },
+            { q: "Connected lighting systems primarily improve:", o: ["Fuel", "Savings & Customization", "Water", "Paper"], a: 1 },
+            { q: "IoT in lighting enables:", o: ["Offline use", "Device connectivity", "Manual only", "No automation"], a: 1 },
+            { q: "Sustainable lighting solutions aim to:", o: ["Carbon footprint", "Reduce energy use", "Waste", "Pollution"], a: 1 },
+            { q: "Human-centric lighting focuses on:", o: ["Decoration", "Supporting well-being", "Heat", "Noise"], a: 1 },
+            { q: "Smart city lighting helps to:", o: ["Reduce urban energy", "Traffic jams", "Waste", "Roads"], a: 0 },
+            { q: "LED technology contributes to sustainability by:", o: ["More power", "Longer life & Saving", "Waste", "Heat"], a: 1 },
+            { q: "Philips Sonicare products are designed for:", o: ["Hair drying", "Oral care", "Cooking", "Cleaning"], a: 1 },
+            { q: "Sonicare technology uses:", o: ["Sonic vibrations", "Steam", "Heat", "Air pressure"], a: 0 },
+            { q: "Philips electric shavers are known for:", o: ["Manual blades", "Skin-friendly tech", "Weight", "Trimming"], a: 1 },
+            { q: "Philips air purifiers improve:", o: ["Water", "Indoor air quality", "Soil", "Fuel"], a: 1 },
+            { q: "Smart kitchen appliances often include:", o: ["App connectivity", "Typewriters", "Ink", "Film"], a: 0 },
+            { q: "Health apps connected to Philips help users:", o: ["Track data", "Games", "Faxes", "Photos"], a: 0 },
+            { q: "Data tracking supports:", o: ["Personalized insights", "Random outputs", "Errors", "Damage"], a: 0 },
+            { q: "Philips baby monitors may include:", o: ["Video monitoring", "Printing", "Fax", "Typewriters"], a: 0 },
+            { q: "Sustainable consumer products may use:", o: ["Recycled materials", "Excess packaging", "Emissions", "Disposable"], a: 0 },
+            { q: "User feedback helps Philips to:", o: ["Ignore customers", "Improve products", "Reduce innovation", "Stop"], a: 1 },
+            { q: "Philips aims to improve how many lives per year by 2030?", o: ["100m", "500m", "1 billion", "5 billion"], a: 2 },
+            { q: "Circular economy principles involve:", o: ["Throw-away", "Recycling and reuse", "Burning", "Single-use"], a: 1 },
+            { q: "Eco-design focuses on:", o: ["Environmental impact", "Pollution", "Short life", "Packaging"], a: 0 },
+            { q: "Reducing carbon emissions supports:", o: ["Climate protection", "Pollution", "Fuel use", "Inconsistency"], a: 0 },
+            { q: "Renewable energy includes:", o: ["Coal", "Oil", "Solar power", "Diesel"], a: 2 },
+            { q: "Responsible sourcing ensures:", o: ["Ethical supply chains", "Illegal trade", "Waste", "Depletion"], a: 0 },
+            { q: "Philips improves healthcare access by:", o: ["Expanding digital health", "Closing hospitals", "Reducing research", "Limiting"], a: 0 },
+            { q: "Emerging technologies invested in by Philips include:", o: ["AI & Data", "Typewriters", "Fax", "Film cameras"], a: 0 },
+            { q: "Innovation helps global health challenges by:", o: ["Costs", "Medical solutions", "Limiting access", "Less research"], a: 1 },
+            { q: "The future of Philips innovation is primarily focused on:", o: ["Entertainment", "Health tech & Sustainability", "Toys", "Textiles"], a: 1 }
         ];
-        var currentThemeIdx = 0;
 
-        // HI-RES PROCEDURAL PLANET DATA
-        var moon = { dist: 380, sz: 60, spd: 0.0012, ang: Math.random()*7, col: "#cbd5e1" };
-        var saturn = { dist: 650, sz: 32, spd: 0.0002, ang: Math.random()*7, col: "#d8ae8d" };
-        var planets = [
-            { id: 'mer', dist: 130, sz: 6, spd: 0.0008, col: "#A5A5A5", ang: Math.random()*7 },
-            { id: 'jup', dist: 530, sz: 28, spd: 0.0003, col: "#c3a48e", ang: Math.random()*7 }
-        ];
-        
-        var worldGeo = null, featureIndex = {}, flashingISO = {}, comets = []; 
-        var canvas = document.getElementById("main-canvas");
-        var context = canvas.getContext("2d");
-        var w, h, isDragging = false, lastX, lastY, rotX = 0, rotY = TARGET_TILT, lastT = Date.now(), lastInteractionT = Date.now();
+        function openQuiz() {
+            var overlay = document.getElementById('quiz-overlay');
+            var qText = document.getElementById('quiz-question');
+            var oBox = document.getElementById('quiz-options');
+            var fBox = document.getElementById('quiz-feedback');
+            fBox.innerText = ""; oBox.innerHTML = ""; overlay.style.display = "flex";
+            var randIdx = Math.floor(Math.random() * quizData.length);
+            var qObj = quizData[randIdx];
+            qText.innerText = qObj.q;
+            for(var i=0; i<qObj.o.length; i++){
+                var btn = document.createElement('button');
+                btn.className = "option-btn"; btn.innerText = String.fromCharCode(65 + i) + ". " + qObj.o[i];
+                btn.onclick = (function(idx, correct, correctText) {
+                    return function() {
+                        if (idx === correct) {
+                            fBox.innerHTML = "<span style='color:#4ade80'>👍 Thumbs Up!</span>";
+                        } else {
+                            fBox.innerHTML = "<span style='color:#f43f5e'>Better luck next time.</span><br><span style='color:white; font-size:1.5vw; font-weight:normal;'>Correct Answer: " + correctText + "</span>";
+                        }
+                        setTimeout(function(){ overlay.style.display = "none"; }, 3500);
+                    };
+                })(i, qObj.a, qObj.o[qObj.a]);
+                oBox.appendChild(btn);
+            }
+        }
+
+        // --- EARTH & SPACE ---
+        var BIRTH_RATE = 4.34, EARTH_ROT_SPD = 0.008, RESUME_DELAY = 5000, TARGET_TILT = -15;
+        var globeThemes = [{l:"#10b981",f:"#ffffff",o:"#0a192f"},{l:"#f43f5e",f:"#ffffff",o:"#1e0108"},{l:"#0ea5e9",f:"#fbbf24",o:"#082f49"},{l:"#eab308",f:"#a855f7",o:"#1e0a01"}];
+        var currentThemeIdx = 0;
+        var moon = { d:380, sz:60, spd:0.0012, ang:Math.random()*7, col:"#cbd5e1", craters:[] };
+        for(var i=0; i<20; i++) moon.craters.push({x:(Math.random()-0.5)*100, y:(Math.random()-0.5)*100, r:Math.random()*5+1, op:Math.random()*0.3});
+        var saturn = { d:650, sz:32, spd:0.0002, ang:Math.random()*7, col:"#d8ae8d" };
+        var planets = [{id:'mer',d:130,sz:6,spd:0.0008,col:"#A5A5A5",ang:Math.random()*7},{id:'jup',d:530,sz:28,spd:0.0003,col:"#c3a48e",ang:Math.random()*7}];
+        var worldGeo = null, featureIndex = {}, flashingISO = {};
+        var canvas = document.getElementById("main-canvas"), context = canvas.getContext("2d");
+        var w, h, isDragging = false, lastX, lastY, rotX = 0, rotY = TARGET_TILT, lastT = Date.now(), lastIntT = Date.now();
 
         function setSizes() { w = window.innerWidth; h = window.innerHeight; canvas.width = w; canvas.height = h; }
         setSizes();
-
-        var projection = d3.geoOrthographic().scale(h / 2.8).translate([w * 0.74, h * 0.5]).clipAngle(90);
+        var projection = d3.geoOrthographic().scale(h/2.8).translate([w*0.74, h*0.5]).clipAngle(90);
         var path = d3.geoPath(projection, context);
 
-        // Interaction Handlers
-        function onAction() { lastInteractionT = Date.now(); }
-        function hStart(x, y) { isDragging = true; lastX = x; lastY = y; onAction(); }
-        function hMove(x, y) { if (isDragging) { rotX += (x - lastX)*0.3; rotY -= (y - lastY)*0.3; lastX = x; lastY = y; onAction(); } }
-        function hEnd() { isDragging = false; onAction(); }
+        function hStart(x,y){isDragging=true; lastX=x; lastY=y; lastIntT=Date.now();}
+        function hMove(x,y){if(isDragging){rotX+=(x-lastX)*0.3; rotY-=(y-lastY)*0.3; lastX=x; lastY=y; lastIntT=Date.now();}}
+        canvas.addEventListener('mousedown',function(e){hStart(e.clientX,e.clientY);});
+        window.addEventListener('mousemove',function(e){hMove(e.clientX,e.clientY);});
+        window.addEventListener('mouseup',function(){isDragging=false;});
+        canvas.addEventListener('touchstart',function(e){e.preventDefault(); hStart(e.touches[0].clientX,e.touches[0].clientY);},{passive:false});
+        window.addEventListener('touchmove',function(e){e.preventDefault(); hMove(e.touches[0].clientX,e.touches[0].clientY);},{passive:false});
 
-        canvas.addEventListener('mousedown', function(e) { hStart(e.clientX, e.clientY); });
-        window.addEventListener('mousemove', function(e) { hMove(e.clientX, e.clientY); });
-        window.addEventListener('mouseup', hEnd);
-        canvas.addEventListener('touchstart', function(e) { e.preventDefault(); hStart(e.touches[0].clientX, e.touches[0].clientY); }, {passive: false});
-        window.addEventListener('touchmove', function(e) { e.preventDefault(); hMove(e.touches[0].clientX, e.touches[0].clientY); }, {passive: false});
-        window.addEventListener('touchend', hEnd);
-
-        setInterval(function() { currentThemeIdx = (currentThemeIdx + 1) % globeThemes.length; }, 180000);
+        setInterval(function(){ currentThemeIdx = (currentThemeIdx+1)%globeThemes.length; }, 180000);
 
         function checkSleepMode() {
             var hr = new Date().getHours();
@@ -156,159 +249,86 @@
         function init() {
             d3.json("https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_admin_0_countries.geojson").then(function(data) {
                 worldGeo = data;
-                for(var i=0; i<data.features.length; i++) {
-                    var f = data.features[i];
-                    featureIndex[f.properties.ISO_A3 || f.properties.ADM0_A3] = f;
-                }
-                document.getElementById('loading').style.display = 'none';
-                checkSleepMode();
-                requestAnimationFrame(renderLoop);
-                startSimulation();
+                for(var i=0; i<data.features.length; i++){ var f = data.features[i]; featureIndex[f.properties.ISO_A3 || f.properties.ADM0_A3] = f; }
+                document.getElementById('loading').style.display='none';
+                checkSleepMode(); requestAnimationFrame(renderLoop); startSimulation();
             });
         }
 
         function renderLoop() {
-            var now = Date.now();
-            var dt = now - lastT;
-            lastT = now;
-            
-            // --- AUTO RESUME ENGINE ---
-            if (!isDragging) {
-                if (now - lastInteractionT > RESUME_DELAY) {
-                    rotX += EARTH_ROT_SPD * dt;
-                    // Vertical Realignment logic
-                    if (Math.abs(rotY - TARGET_TILT) > 0.1) {
-                        rotY += (TARGET_TILT - rotY) * 0.02;
-                    } else {
-                        rotY = TARGET_TILT;
-                    }
-                }
+            var now = Date.now(), dt = now - lastT; lastT = now;
+            if(!isDragging && (now - lastIntT > RESUME_DELAY)){
+                rotX += EARTH_ROT_SPD * dt;
+                if(Math.abs(rotY - TARGET_TILT) > 0.1) rotY += (TARGET_TILT - rotY)*0.02;
             }
-
             projection.rotate([rotX, rotY]);
-            context.clearRect(0, 0, w, h);
-            var ex = w * 0.74, ey = h * 0.5;
+            context.clearRect(0,0,w,h);
+            var ex=w*0.74, ey=h*0.5;
 
-            updateComets();
+            var sAng = now * 0.00003, sx = ex + Math.cos(sAng)*(w*0.55), sy = ey + Math.sin(sAng)*(h*0.4);
+            var sGrad = context.createRadialGradient(sx,sy,0,sx,sy,60);
+            sGrad.addColorStop(0,"#ffffff"); sGrad.addColorStop(0.3,"#fbbf24"); sGrad.addColorStop(1,"transparent");
+            context.beginPath(); context.arc(sx,sy,60,0,7); context.fillStyle=sGrad; context.fill();
 
-            // 1. Draw Sun
-            var sAng = now * 0.00003;
-            var sx = ex + Math.cos(sAng) * (w * 0.55);
-            var sy = ey + Math.sin(sAng) * (h * 0.4);
-            var sGrad = context.createRadialGradient(sx, sy, 0, sx, sy, 60);
-            sGrad.addColorStop(0, "#ffffff"); sGrad.addColorStop(0.3, "#fbbf24"); sGrad.addColorStop(1, "transparent");
-            context.beginPath(); context.arc(sx, sy, 60, 0, 7); context.fillStyle = sGrad; context.fill();
+            drawMoon(moon, ex, ey, sx, sy, dt);
+            drawSaturn(saturn, ex, ey, sx, sy, dt);
+            for(var i=0; i<planets.length; i++) drawPlanet(planets[i], ex, ey, sx, sy, dt);
 
-            // 2. Draw High-Detail Saturn
-            drawRealisticSaturn(sx, sy, ex, ey, dt, now);
-
-            // 3. Draw Photorealistic Moon
-            drawPhotorealisticMoon(sx, sy, ex, ey, dt, now);
-
-            // 4. Draw Other Planets
-            for(var i=0; i<planets.length; i++) drawPlanet(planets[i], ex, ey, sx, sy, dt, now);
-
-            // 5. Draw Earth
             var center = projection.translate(), radius = projection.scale(), theme = globeThemes[currentThemeIdx];
             var oceanGrad = context.createRadialGradient(center[0]-radius/2.5, center[1]-radius/2.5, radius/20, center[0], center[1], radius);
-            oceanGrad.addColorStop(0, "#3b82f6"); oceanGrad.addColorStop(0.5, theme.ocean); oceanGrad.addColorStop(1, "#020617");
-            context.beginPath(); context.arc(center[0], center[1], radius, 0, 7);
-            context.fillStyle = oceanGrad; context.fill();
+            oceanGrad.addColorStop(0, "#3b82f6"); oceanGrad.addColorStop(0.5, theme.o); oceanGrad.addColorStop(1, "#020617");
+            context.beginPath(); context.arc(center[0], center[1], radius, 0, 7); context.fillStyle = oceanGrad; context.fill();
 
             if (worldGeo) {
-                context.beginPath(); path(worldGeo); 
-                context.fillStyle = theme.land; context.fill();
-                context.strokeStyle = "rgba(255, 255, 255, 0.3)"; context.lineWidth = 0.6; context.stroke();
+                context.beginPath(); path(worldGeo); context.fillStyle = theme.l; context.fill();
+                context.strokeStyle = "rgba(255,255,255,0.3)"; context.lineWidth = 0.6; context.stroke();
                 for (var iso in flashingISO) {
-                    if (now - flashingISO[iso] < 1500) {
+                    if (Date.now() - flashingISO[iso] < 1500) {
                         var feat = featureIndex[iso];
-                        if(feat) {
-                            context.beginPath(); path(feat);
-                            context.fillStyle = theme.flash; context.fill();
-                            context.strokeStyle = "white"; context.lineWidth = 1.2; context.stroke();
-                        }
+                        if(feat) { context.beginPath(); path(feat); context.fillStyle = theme.f; context.fill(); context.strokeStyle="white"; context.lineWidth=1.2; context.stroke(); }
                     } else { delete flashingISO[iso]; }
                 }
             }
             requestAnimationFrame(renderLoop);
         }
 
-        function drawPhotorealisticMoon(sx, sy, ex, ey, dt, t) {
-            moon.ang += moon.spd * dt * 0.1;
-            var px = ex + Math.cos(moon.ang) * moon.dist;
-            var py = ey + Math.sin(moon.ang) * moon.dist * 0.7;
-            var dx = px - sx, dy = py - sy, angToSun = Math.atan2(dy, dx);
-            context.save();
-            context.translate(px, py);
-            var pGrad = context.createRadialGradient(-moon.sz*0.3, -moon.sz*0.3, 0, 0, 0, moon.sz);
-            pGrad.addColorStop(0, moon.col); pGrad.addColorStop(1, "#000000");
-            context.beginPath(); context.arc(0, 0, moon.sz, 0, 7); context.fillStyle = pGrad; context.fill();
-            context.clip();
-            context.fillStyle = "rgba(30, 41, 59, 0.4)";
-            for(var i=0; i<6; i++) { context.beginPath(); context.ellipse(Math.sin(i)*20, Math.cos(i)*15, 25, 15, i, 0, 7); context.fill(); }
+        function drawMoon(p,ex,ey,sx,sy,dt){
+            p.ang += p.spd*dt*0.1; var px=ex+Math.cos(p.ang)*p.d, py=ey+Math.sin(p.ang)*p.d*0.7;
+            var dx=px-sx, dy=py-sy, ang=Math.atan2(dy,dx);
+            context.save(); context.translate(px,py);
+            var g = context.createRadialGradient(-p.sz*0.3,-p.sz*0.3,0,0,0,p.sz); g.addColorStop(0,p.col); g.addColorStop(1,"#000");
+            context.beginPath(); context.arc(0,0,p.sz,0,7); context.fillStyle=g; context.fill();
+            context.clip(); context.fillStyle="rgba(30,41,59,0.4)";
+            for(var i=0;i<p.craters.length;i++){ context.beginPath(); context.arc(p.craters[i].x,p.craters[i].y,p.craters[i].r,0,7); context.fill(); }
             context.restore();
-            var shad = context.createRadialGradient(px + Math.cos(angToSun)*moon.sz*0.5, py + Math.sin(angToSun)*moon.sz*0.5, 0, px, py, moon.sz);
-            shad.addColorStop(0, "rgba(0,0,0,0)"); shad.addColorStop(1, "rgba(0,0,0,0.95)");
-            context.beginPath(); context.arc(px, py, moon.sz + 0.5, 0, 7); context.fillStyle = shad; context.fill();
+            var shad = context.createRadialGradient(px+Math.cos(ang)*p.sz*0.5, py+Math.sin(ang)*p.sz*0.5, 0, px,py,p.sz);
+            shad.addColorStop(0,"rgba(0,0,0,0)"); shad.addColorStop(1,"rgba(0,0,0,0.95)");
+            context.beginPath(); context.arc(px,py,p.sz+0.5,0,7); context.fillStyle=shad; context.fill();
         }
 
-        function drawRealisticSaturn(sx, sy, ex, ey, dt, t) {
-            saturn.ang += saturn.spd * dt * 0.1;
-            var px = ex + Math.cos(saturn.ang) * saturn.dist;
-            var py = ey + Math.sin(saturn.ang) * saturn.dist * 0.65;
-            var dx = px - sx, dy = py - sy, angToSun = Math.atan2(dy, dx);
-            context.save();
-            context.translate(px, py);
-            context.globalAlpha = 0.6;
-            for(var r=0; r<10; r++) {
-                context.beginPath(); context.ellipse(0, 0, saturn.sz*(1.8+r*0.1), saturn.sz*(0.6+r*0.03), 0.4, 0, 7);
-                context.strokeStyle = (r === 4) ? "rgba(0,0,0,0.5)" : "rgba(216, 174, 141, 0.2)";
-                context.lineWidth = 3; context.stroke();
-            }
-            context.globalAlpha = 1.0;
-            var pGrad = context.createRadialGradient(-saturn.sz*0.3, -saturn.sz*0.3, 0, 0, 0, saturn.sz);
-            pGrad.addColorStop(0, saturn.col); pGrad.addColorStop(1, "#1a0f08");
-            context.beginPath(); context.arc(0, 0, saturn.sz, 0, 7); context.fillStyle = pGrad; context.fill();
+        function drawSaturn(p,ex,ey,sx,sy,dt){
+            p.ang += p.spd*dt*0.1; var px=ex+Math.cos(p.ang)*p.d, py=ey+Math.sin(p.ang)*p.d*0.65;
+            var dx=px-sx, dy=py-sy, ang=Math.atan2(dy,dx);
+            context.save(); context.translate(px,py);
+            context.globalAlpha=0.6; for(var r=0;r<10;r++){ context.beginPath(); context.ellipse(0,0,p.sz*(1.8+r*0.1),p.sz*(0.6+r*0.03),0.4,0,7); context.strokeStyle="rgba(216,174,141,0.2)"; context.stroke(); }
+            context.globalAlpha=1; var g=context.createRadialGradient(-p.sz*0.3,-p.sz*0.3,0,0,0,p.sz); g.addColorStop(0,p.col); g.addColorStop(1,"#1a0f08");
+            context.beginPath(); context.arc(0,0,p.sz,0,7); context.fillStyle=g; context.fill();
             context.restore();
-            var shad = context.createRadialGradient(px + Math.cos(angToSun)*saturn.sz*0.5, py + Math.sin(angToSun)*saturn.sz*0.5, 0, px, py, saturn.sz);
-            shad.addColorStop(0, "rgba(0,0,0,0)"); shad.addColorStop(1, "rgba(0,0,0,0.9)");
-            context.beginPath(); context.arc(px, py, saturn.sz + 0.5, 0, 7); context.fillStyle = shad; context.fill();
+            var shad=context.createRadialGradient(px+Math.cos(ang)*p.sz*0.5, py+Math.sin(ang)*p.sz*0.5, 0, px,py,p.sz);
+            shad.addColorStop(0,"rgba(0,0,0,0)"); shad.addColorStop(1,"rgba(0,0,0,0.9)");
+            context.beginPath(); context.arc(px,py,p.sz+0.5,0,7); context.fillStyle=shad; context.fill();
         }
 
-        function drawPlanet(p, ex, ey, sx, sy, dt, t) {
-            p.ang += p.spd * dt * 0.1;
-            var px = ex + Math.cos(p.ang) * p.dist;
-            var py = ey + Math.sin(p.ang) * p.dist * 0.7;
-            var dx = px - sx, dy = py - sy, angToSun = Math.atan2(dy, dx);
-            context.save();
-            context.translate(px, py);
-            var pGrad = context.createRadialGradient(-p.sz*0.3, -p.sz*0.3, 0, 0, 0, p.sz);
-            pGrad.addColorStop(0, p.col); pGrad.addColorStop(1, "#000000");
-            context.beginPath(); context.arc(0, 0, p.sz, 0, 7); context.fillStyle = pGrad; context.fill();
+        function drawPlanet(p,ex,ey,sx,sy,dt){
+            p.ang += p.spd*dt*0.1; var px=ex+Math.cos(p.ang)*p.d, py=ey+Math.sin(p.ang)*p.d*0.7;
+            var dx=px-sx, dy=py-sy, ang=Math.atan2(dy,dx);
+            context.save(); context.translate(px,py);
+            var g=context.createRadialGradient(-p.sz*0.3,-p.sz*0.3,0,0,0,p.sz); g.addColorStop(0,p.col); g.addColorStop(1,"#000");
+            context.beginPath(); context.arc(0,0,p.sz,0,7); context.fillStyle=g; context.fill();
             context.restore();
-            var shad = context.createRadialGradient(px + Math.cos(angToSun)*p.sz*0.5, py + Math.sin(angToSun)*p.sz*0.5, 0, px, py, p.sz);
-            shad.addColorStop(0, "rgba(0,0,0,0)"); shad.addColorStop(1, "rgba(0,0,0,0.9)");
-            context.beginPath(); context.arc(px, py, p.sz + 0.5, 0, 7); context.fillStyle = shad; context.fill();
-        }
-
-        function updateComets() {
-            if (Math.random() > 0.996) {
-                var s = Math.floor(Math.random()*4), cx, cy, cvx, cvy;
-                if(s==0){cx=Math.random()*w; cy=-50; cvx=(Math.random()-0.5)*10; cvy=8+Math.random()*8;}
-                else if(s==1){cx=Math.random()*w; cy=h+50; cvx=(Math.random()-0.5)*10; cvy=-(8+Math.random()*8);}
-                else if(s==2){cx=-50; cy=Math.random()*h; cvx=8+Math.random()*8; cvy=(Math.random()-0.5)*10;}
-                else{cx=w+50; cy=Math.random()*h; cvx=-(8+Math.random()*8); cvy=(Math.random()-0.5)*10;}
-                comets.push({ x: cx, y: cy, vx: cvx, vy: cvy, life: 1 });
-            }
-            for (var i = 0; i < comets.length; i++) {
-                var c = comets[i];
-                var g = context.createLinearGradient(c.x, c.y, c.x - c.vx*12, c.y - c.vy*12);
-                g.addColorStop(0, "white"); g.addColorStop(1, "transparent");
-                context.strokeStyle = g; context.lineWidth = 4; context.beginPath();
-                context.moveTo(c.x, c.y); context.lineTo(c.x - c.vx*15, c.y - c.vy*15); context.stroke();
-                c.x += c.vx; c.y += c.vy; c.life -= 0.008;
-                if(c.life <= 0) { comets.splice(i, 1); i--; }
-            }
+            var shad=context.createRadialGradient(px+Math.cos(ang)*p.sz*0.5, py+Math.sin(ang)*p.sz*0.5, 0, px,py,p.sz);
+            shad.addColorStop(0,"rgba(0,0,0,0)"); shad.addColorStop(1,"rgba(0,0,0,0.9)");
+            context.beginPath(); context.arc(px,py,p.sz+0.5,0,7); context.fillStyle=shad; context.fill();
         }
 
         function startSimulation() {
@@ -319,8 +339,7 @@
                 document.getElementById('clock').innerText = now.toLocaleTimeString('en-GB');
                 document.getElementById('bar').style.width = (elapsed / 86400 * 100) + "%";
                 if (worldGeo) {
-                    var keys = Object.keys(featureIndex);
-                    flashingISO[keys[Math.floor(Math.random()*keys.length)]] = Date.now();
+                    var keys = Object.keys(featureIndex); flashingISO[keys[Math.floor(Math.random()*keys.length)]] = Date.now();
                 }
             }, 1000 / BIRTH_RATE);
         }
@@ -333,9 +352,7 @@
             s.style.setProperty('--t', (2 + Math.random()*3) + 's');
             field.appendChild(s);
         }
-
-        window.onresize = setSizes;
-        init();
+        window.onresize = setSizes; init();
     </script>
 </body>
 </html>
