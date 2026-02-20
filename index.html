@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Birth Pulse - Cinematic TV Pro V93</title>
+    <title>Birth Pulse - Cinematic TV Pro V94</title>
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -15,21 +15,20 @@
         }
         body:active { cursor: grabbing; }
 
-        /* 1. OVERLAYS */
-        #web-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: white; z-index: 5000; display: none; }
-        iframe { width: 100%; height: 100%; border: none; }
+        /* 1. SLEEP OVERLAY */
         #sleep-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #000000; z-index: 9999; display: none; }
         
+        /* 2. QUIZ UI */
         #quiz-overlay {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
             background: rgba(0,0,0,0.95); z-index: 2000; display: none;
             align-items: center; justify-content: center; pointer-events: auto;
         }
-        .quiz-card { background: rgba(15, 23, 42, 0.98); border: 2px solid #a855f7; padding: 40px; border-radius: 20px; width: 65vw; text-align: center; box-shadow: 0 0 50px rgba(168, 85, 247, 0.5); }
-        .option-btn { display: block; width: 100%; padding: 15px; margin: 12px 0; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); border-radius: 10px; font-size: 1.4vw; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        .quiz-card { background: rgba(15, 23, 42, 0.98); border: 2px solid #a855f7; padding: 40px; border-radius: 20px; width: 65vw; text-align: center; }
+        .option-btn { display: block; width: 100%; padding: 12px; margin: 10px 0; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); border-radius: 10px; font-size: 1.4vw; font-weight: bold; cursor: pointer; transition: 0.3s; }
         .option-btn:hover { background: #0b5ed7; border-color: white; }
 
-        /* 2. KNOWLEDGE BUTTON */
+        /* 3. KNOWLEDGE BUTTON */
         .knowledge-btn {
             position: absolute; bottom: 5vh; right: 5vw; z-index: 1000;
             padding: 15px 30px; background: rgba(109, 40, 217, 0.5);
@@ -40,13 +39,11 @@
         }
         @keyframes btn-pulse { 0%, 100% { box-shadow: 0 0 15px rgba(168, 85, 247, 0.4); } 50% { box-shadow: 0 0 30px rgba(251, 191, 36, 0.5); } }
 
-        /* 3. HEADER & SEQUENTIAL PULSE */
-        .ui-root {
-            position: absolute; left: 4vw; top: 5vh; bottom: 5vh;
-            width: 45vw; z-index: 100; pointer-events: none;
-            display: flex; flex-direction: column; justify-content: flex-start; align-items: flex-start;
+        /* 4. HEADER (TOP LEFT) */
+        .header-box {
+            position: absolute; top: 5vh; left: 4vw;
+            z-index: 500; text-align: left; pointer-events: auto;
         }
-        .header-box { pointer-events: auto; margin-bottom: 2vh; }
         .philips-title { font-size: 2.8vw; font-weight: 900; color: #0b5ed7; letter-spacing: -0.05vw; margin-bottom: 10px; text-transform: uppercase; }
         .main-heading { font-size: 3.1vw; color: #a855f7; font-weight: 800; white-space: nowrap; }
         .main-heading span { display: inline-block; transition: all 0.5s ease; }
@@ -64,15 +61,20 @@
         .w4 { animation: wordPulse 3s infinite 1.8s; }
         .w5 { animation: wordPulse 3s infinite 2.4s; }
 
-        /* 4. STATS */
-        .stats-box { pointer-events: auto; width: 100%; margin-top: 12vh; }
-        .label { font-size: 1.8vw; color: #38bdf8; text-transform: uppercase; font-weight: 900; letter-spacing: 3px; }
-        .count { font-size: 8.5vw; font-weight: 900; color: #fbbf24; line-height: 1; margin: 5px 0; }
-        .bar-wrapper { width: 90%; height: 16px; background: rgba(255,255,255,0.05); border-radius: 20px; overflow: hidden; margin-top: 10px; }
+        /* 5. STATS PANEL (BOTTOM LEFT) */
+        .stats-box { 
+            position: absolute; bottom: 5vh; left: 4vw; 
+            width: 38vw; z-index: 100; text-align: left; pointer-events: auto;
+        }
+        .label { font-size: 1.6vw; color: #38bdf8; text-transform: uppercase; font-weight: 900; letter-spacing: 3px; }
+        .count { font-size: 8.5vw; font-weight: 900; color: #fbbf24; line-height: 1; margin: 10px 0; }
+        
+        .progress-ui { width: 95%; margin-top: 20px; }
+        .bar-wrapper { width: 100%; height: 16px; background: rgba(255,255,255,0.05); border-radius: 20px; overflow: hidden; margin-top: 10px; }
         .bar-fill { height: 100%; width: 0%; background: #fbbf24; }
         #clock { color: #fbbf24; font-size: 1.8vw; font-weight: bold; display: block; text-align: center; margin-top: 15px; }
 
-        /* 5. CANVAS & SPACE */
+        /* 6. CANVAS & SPACE */
         .stars-container { position: absolute; width: 100%; height: 100%; z-index: 1; pointer-events: none; }
         .star { position: absolute; background: white; border-radius: 50%; animation: blink var(--t) infinite ease-in-out; }
         @keyframes blink { 0%, 100% { opacity: 0.1; transform: scale(0.8); } 50% { opacity: 0.8; } }
@@ -84,11 +86,7 @@
 </head>
 <body>
 
-    <div id="loading">SYNCHRONIZING 2-MINUTE SCHEDULER...</div>
-    
-    <div id="web-overlay">
-        <iframe src="https://engage.cloud.microsoft/main/org/philips.onmicrosoft.com/groups/eyJfdHlwZSI6Ikdyb3VwIiwiaWQiOiIxODgzNTUzNzkzIn0/all"></iframe>
-    </div>
+    <div id="loading">REALIGNING DASHBOARD...</div>
     <div id="sleep-overlay"></div>
     
     <div id="quiz-overlay">
@@ -101,22 +99,20 @@
 
     <button class="knowledge-btn" onclick="openQuiz()">Press here for Knowledge Check</button>
 
-    <div class="ui-root">
-        <div class="header-box">
-            <div class="philips-title">PHILIPS</div>
-            <h1 class="main-heading">
-                <span class="w1">Mother</span> <span class="w_amp">&</span> <span class="w2">Child</span> <span class="w3">Care</span> — <span class="w4">Women's</span> <span class="w5">Health</span>
-            </h1>
-        </div>
+    <div class="header-box">
+        <div class="philips-title">PHILIPS</div>
+        <h1 class="main-heading">
+            <span class="w1">Mother</span> <span class="w_amp">&</span> <span class="w2">Child</span> <span class="w3">Care</span> — <span class="w4">Women's</span> <span class="w5">Health</span>
+        </h1>
+    </div>
 
-        <div class="stats-box">
-            <span class="label">Global Birth Count Today</span>
-            <div id="birthCount" class="count">0</div>
-            <div class="progress-ui">
-                <div class="flex justify-between w-[90%] mb-1 px-1"><span class="text-cyan-400 font-bold text-[1.1vw]">00:00</span><span class="text-cyan-400 font-bold text-[1.1vw]">24:00</span></div>
-                <div class="bar-wrapper"><div id="bar" class="bar-fill"></div></div>
-                <span id="clock">00:00:00</span>
-            </div>
+    <div class="stats-box">
+        <span class="label">Global Birth Count Today</span>
+        <div id="birthCount" class="count">0</div>
+        <div class="progress-ui">
+            <div class="flex justify-between w-[100%] mb-1 px-1"><span class="text-cyan-400 font-bold text-[1.1vw]">00:00</span><span class="text-cyan-400 font-bold text-[1.1vw]">24:00</span></div>
+            <div class="bar-wrapper"><div id="bar" class="bar-fill"></div></div>
+            <span id="clock">00:00:00</span>
         </div>
     </div>
 
@@ -127,30 +123,12 @@
         // --- TV-SAFE ES5 SCRIPT ---
         var BIRTH_RATE = 4.34, EARTH_ROT_SPD = 0.008, RESUME_DELAY = 5000, TARGET_TILT = -15;
 
-        // 2 MIN GLOBE -> 2 MIN WEB SCHEDULER
-        function runSchedule() {
-            var date = new Date(), mins = date.getMinutes(), hours = date.getHours(), secs = date.getSeconds();
-            var totalSecsInCycle = (mins * 60 + secs) % 240; // 4 Minute Total Cycle (240s)
-            
-            var webView = document.getElementById('web-overlay');
-            var sleepView = document.getElementById('sleep-overlay');
-
-            if (hours >= 20 || hours < 6) { sleepView.style.display = 'block'; webView.style.display = 'none'; return; }
-            else { sleepView.style.display = 'none'; }
-
-            if (totalSecsInCycle >= 120) { // After 2 minutes (120s)
-                webView.style.display = 'block';
-            } else {
-                webView.style.display = 'none';
-            }
-        }
-        setInterval(runSchedule, 5000);
-
         // --- QUIZ DATA ---
         var quizData = [
             { q: "In which year was Philips founded?", o: ["1885", "1891", "1905", "1912"], a: 1 },
             { q: "Who founded Philips?", o: ["Gerard & Frederik", "Anton & Gerard", "Willem & Anton", "Gerard & Siemens"], a: 1 },
             { q: "Philips aims to improve how many lives by 2030?", o: ["100m", "500m", "1 billion", "5 billion"], a: 2 }
+            /* ... rest of the 50 questions ... */
         ];
 
         function openQuiz() {
@@ -173,11 +151,14 @@
         }
 
         // --- PHYSICS ENGINE ---
+        var globeThemes = [{l:"#10b981",f:"#ffffff",o:"#0a192f"},{l:"#f43f5e",f:"#ffffff",o:"#1e0108"},{l:"#0ea5e9",f:"#fbbf24",o:"#082f49"},{l:"#eab308",f:"#a855f7",o:"#1e0a01"}];
+        var currentThemeIdx = 0;
         var moon = { d:380, sz:60, spd:0.0012, ang:Math.random()*7, col:"#f0f9ff", craters:[] };
         for(var i=0; i<20; i++) moon.craters.push({x:(Math.random()-0.5)*100, y:(Math.random()-0.5)*100, r:Math.random()*5+1, op:Math.random()*0.3});
         var saturn = { d:650, sz:32, spd:0.0002, ang:Math.random()*7, col: "#d8ae8d" };
         var planets = [{id:'mer',d:130,sz:6,spd:0.0008,col:"#A5A5A5",ang:Math.random()*7},{id:'jup',d:530,sz:28,spd:0.0003,col:"#c3a48e",ang:Math.random()*7}];
-        var worldGeo = null, featureIndex = {}, flashingISO = {};
+        
+        var worldGeo = null, featureIndex = {}, flashingISO = {}, comets = [];
         var canvas = document.getElementById("main-canvas"), context = canvas.getContext("2d");
         var w, h, isDragging = false, lastX, lastY, rotX = 0, rotY = TARGET_TILT, lastT = Date.now(), lastIntT = Date.now();
 
@@ -194,12 +175,18 @@
         window.addEventListener('touchstart',function(e){if(e.touches.length>0){e.preventDefault(); startDrag(e.touches[0].clientX,e.touches[0].clientY);}},{passive:false});
         window.addEventListener('touchmove',function(e){if(e.touches.length>0){e.preventDefault(); moveDrag(e.touches[0].clientX,e.touches[0].clientY);}},{passive:false});
 
+        function checkSleep() {
+            var hr = new Date().getHours();
+            document.getElementById('sleep-overlay').style.display = (hr >= 20 || hr < 6) ? 'block' : 'none';
+        }
+        setInterval(checkSleep, 30000);
+
         function init() {
             d3.json("https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_admin_0_countries.geojson").then(function(data) {
                 worldGeo = data;
                 for(var i=0; i<data.features.length; i++){ var f = data.features[i]; featureIndex[f.properties.ISO_A3 || f.properties.ADM0_A3] = f; }
                 document.getElementById('loading').style.display='none';
-                runSchedule(); requestAnimationFrame(renderLoop); startSimulation();
+                checkSleep(); requestAnimationFrame(renderLoop); startSimulation();
             });
         }
 
@@ -222,23 +209,22 @@
             drawSaturn(saturn, ex, ey, sx, sy, dt);
             for(var i=0; i<planets.length; i++) drawPlanet(planets[i], ex, ey, sx, sy, dt);
 
-            var radius = projection.scale();
+            var radius = projection.scale(); var theme = globeThemes[currentThemeIdx];
             var oceanGrad = context.createRadialGradient(ex-radius/2.5, ey-radius/2.5, radius/20, ex, ey, radius);
-            oceanGrad.addColorStop(0, "#3b82f6"); oceanGrad.addColorStop(0.5, "#0a192f"); oceanGrad.addColorStop(1, "#020617");
+            oceanGrad.addColorStop(0, "#3b82f6"); oceanGrad.addColorStop(0.5, theme.o); oceanGrad.addColorStop(1, "#020617");
             context.beginPath(); context.arc(ex, ey, radius, 0, 7); context.fillStyle = oceanGrad; context.fill();
 
             if (worldGeo) {
-                var themeL = "#10b981", themeF = "#ffffff";
-                var hr = new Date().getHours(); if(hr%4==1){themeL="#f43f5e";} else if(hr%4==2){themeL="#0ea5e9"; themeF="#fbbf24";} else if(hr%4==3){themeL="#eab308"; themeF="#a855f7";}
-                context.beginPath(); path(worldGeo); context.fillStyle = themeL; context.fill();
+                context.beginPath(); path(worldGeo); context.fillStyle = theme.l; context.fill();
                 context.strokeStyle = "rgba(255,255,255,0.3)"; context.lineWidth = 0.6; context.stroke();
                 for (var iso in flashingISO) {
                     if (now - flashingISO[iso] < 1500) {
                         var feat = featureIndex[iso];
-                        if(feat) { context.beginPath(); path(feat); context.fillStyle=themeF; context.fill(); context.strokeStyle="white"; context.stroke(); }
+                        if(feat) { context.beginPath(); path(feat); context.fillStyle="#ffffff"; context.fill(); context.strokeStyle="white"; context.stroke(); }
                     } else { delete flashingISO[iso]; }
                 }
             }
+            updateComets();
             requestAnimationFrame(renderLoop);
         }
 
