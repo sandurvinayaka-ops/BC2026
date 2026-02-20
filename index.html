@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Birth Pulse - Cinematic TV Pro V92</title>
+    <title>Birth Pulse - Cinematic TV Pro V95</title>
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -15,10 +15,8 @@
         }
         body:active { cursor: grabbing; }
 
-        /* 1. SLEEP OVERLAY */
+        /* 1. OVERLAYS */
         #sleep-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #000000; z-index: 9999; display: none; }
-        
-        /* 2. QUIZ UI */
         #quiz-overlay {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
             background: rgba(0,0,0,0.95); z-index: 2000; display: none;
@@ -28,7 +26,7 @@
         .option-btn { display: block; width: 100%; padding: 12px; margin: 10px 0; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); border-radius: 10px; font-size: 1.4vw; font-weight: bold; cursor: pointer; transition: 0.3s; }
         .option-btn:hover { background: #0b5ed7; border-color: white; }
 
-        /* 3. KNOWLEDGE BUTTON */
+        /* 2. KNOWLEDGE BUTTON */
         .knowledge-btn {
             position: absolute; bottom: 5vh; right: 5vw; z-index: 1000;
             padding: 15px 30px; background: rgba(109, 40, 217, 0.5);
@@ -39,17 +37,15 @@
         }
         @keyframes btn-pulse { 0%, 100% { box-shadow: 0 0 15px rgba(168, 85, 247, 0.4); } 50% { box-shadow: 0 0 30px rgba(251, 191, 36, 0.5); } }
 
-        /* 4. LEFT-ALIGNED UI ROOT */
-        .ui-root {
-            position: absolute; left: 4vw; top: 5vh; bottom: 5vh;
-            width: 45vw; z-index: 100; pointer-events: none;
-            display: flex; flex-direction: column;
-            justify-content: flex-start; align-items: flex-start;
+        /* 3. TOP-LEFT HEADER (Fixed) */
+        .header-box {
+            position: absolute; top: 5vh; left: 4vw;
+            z-index: 500; text-align: left; pointer-events: auto;
         }
-
-        .header-box { pointer-events: auto; margin-bottom: 2vh; }
-        .philips-title { font-size: 2.8vw; font-weight: 900; color: #0b5ed7; letter-spacing: -0.05vw; margin-bottom: 10px; text-transform: uppercase; }
-        
+        .philips-title { 
+            font-size: 2.8vw; font-weight: 900; color: #0b5ed7; /* Corporate Blue */
+            letter-spacing: -0.05vw; margin-bottom: 10px; text-transform: uppercase; 
+        }
         .main-heading { font-size: 3.1vw; color: #a855f7; font-weight: 800; white-space: nowrap; }
         .main-heading span { display: inline-block; transition: all 0.5s ease; }
         
@@ -57,23 +53,36 @@
             0%, 20%, 100% { transform: scale(1); color: #a855f7; text-shadow: 0 0 20px rgba(168, 85, 247, 0.4); }
             10% { transform: scale(1.15); color: #fbbf24; text-shadow: 0 0 30px rgba(251, 191, 36, 0.6); }
         }
-        @keyframes ampAlwaysRotate { from { transform: rotateY(0deg); } to { transform: rotateY(360deg); } }
+
+        /* Ampersand Jump - Syncs with w4 (Women's) */
+        @keyframes ampJump {
+            0%, 55%, 75%, 100% { transform: translateY(0); }
+            65% { transform: translateY(-20px); }
+        }
 
         .w1 { animation: wordPulse 3s infinite 0.0s; }
-        .w_amp { animation: ampAlwaysRotate 3s linear infinite !important; color: #a855f7 !important; margin: 0 0.5vw; }
+        .w_amp { color: #a855f7 !important; margin: 0 0.5vw; animation: ampJump 3s infinite; }
         .w2 { animation: wordPulse 3s infinite 0.6s; }
         .w3 { animation: wordPulse 3s infinite 1.2s; }
-        .w4 { animation: wordPulse 3s infinite 1.8s; }
-        .w5 { animation: wordPulse 3s infinite 2.4s; }
+        .w4 { animation: wordPulse 3s infinite 1.8s; } /* Women's */
+        .w5 { animation: wordPulse 3s infinite 2.4s; } /* Health */
 
-        .stats-box { pointer-events: auto; width: 100%; margin-top: 12vh; }
+        /* 4. BOTTOM-LEFT STATS (Moved from center to bottom) */
+        .stats-box { 
+            position: absolute; bottom: 6vh; left: 4vw; 
+            width: 38vw; z-index: 100; text-align: left; pointer-events: auto;
+        }
         .label { font-size: 1.6vw; color: #38bdf8; text-transform: uppercase; font-weight: 900; letter-spacing: 3px; }
-        .count { font-size: 8.5vw; font-weight: 900; color: #fbbf24; line-height: 1; margin: 10px 0; }
+        .count { 
+            font-size: 6.8vw; /* 0.8x of previous size */
+            font-weight: 900; color: #fbbf24; line-height: 1; margin: 5px 0; 
+            text-shadow: 0 0 30px rgba(250, 204, 21, 0.4);
+        }
         
-        .progress-ui { width: 90%; margin-top: 20px; }
-        .bar-wrapper { width: 100%; height: 16px; background: rgba(255,255,255,0.05); border-radius: 20px; overflow: hidden; margin-top: 10px; }
-        .bar-fill { height: 100%; width: 0%; background: #fbbf24; }
-        #clock { color: #fbbf24; font-size: 1.8vw; font-weight: bold; display: block; text-align: center; margin-top: 15px; }
+        .progress-ui { width: 72%; margin-top: 15px; } /* 0.8x of previous width */
+        .bar-wrapper { width: 100%; height: 14px; background: rgba(255,255,255,0.05); border-radius: 20px; overflow: hidden; margin-top: 8px; }
+        .bar-fill { height: 100%; width: 0%; background: #fbbf24; box-shadow: 0 0 15px #fbbf24; }
+        #clock { color: #fbbf24; font-size: 1.8vw; font-weight: bold; display: block; text-align: center; margin-top: 12px; }
 
         /* 5. CANVAS & SPACE */
         .stars-container { position: absolute; width: 100%; height: 100%; z-index: 1; pointer-events: none; }
@@ -87,7 +96,7 @@
 </head>
 <body>
 
-    <div id="loading">OPTIMIZING CINEMATIC ENVIRONMENT...</div>
+    <div id="loading">POSITIONING CINEMATIC DASHBOARD...</div>
     <div id="sleep-overlay"></div>
     
     <div id="quiz-overlay">
@@ -98,24 +107,32 @@
         </div>
     </div>
 
-    <button class="knowledge-btn" onclick="openQuiz()">Press here for Knowledge Check</button>
+    <button class="knowledge-btn" onclick="openQuiz()">Press here for Knowledge check</button>
 
-    <div class="ui-root">
-        <div class="header-box">
-            <div class="philips-title">PHILIPS</div>
-            <h1 class="main-heading">
-                <span class="w1">Mother</span> <span class="w_amp">&</span> <span class="w2">Child</span> <span class="w3">Care</span> — <span class="w4">Women's</span> <span class="w5">Health</span>
-            </h1>
-        </div>
+    <!-- TOP LEFT HEADER -->
+    <div class="header-box">
+        <div class="philips-title">PHILIPS</div>
+        <h1 class="main-heading">
+            <span class="w1">Mother</span> 
+            <span class="w_amp">&</span> 
+            <span class="w2">Child</span> 
+            <span class="w3">Care</span> — 
+            <span class="w4">Women's</span> 
+            <span class="w5">Health</span>
+        </h1>
+    </div>
 
-        <div class="stats-box">
-            <span class="label">Global Birth Count Today</span>
-            <div id="birthCount" class="count">0</div>
-            <div class="progress-ui">
-                <div class="flex justify-between w-[100%] mb-1 px-1"><span class="text-cyan-400 font-bold text-[1.1vw]">00:00</span><span class="text-cyan-400 font-bold text-[1.1vw]">24:00</span></div>
-                <div class="bar-wrapper"><div id="bar" class="bar-fill"></div></div>
-                <span id="clock">00:00:00</span>
+    <!-- BOTTOM LEFT STATS -->
+    <div class="stats-box">
+        <span class="label">Global Birth Count Today</span>
+        <div id="birthCount" class="count">0</div>
+        <div class="progress-ui">
+            <div class="flex justify-between w-[100%] mb-1 px-1">
+                <span class="text-cyan-400 font-bold text-[1.1vw]">00:00</span>
+                <span class="text-cyan-400 font-bold text-[1.1vw]">24:00</span>
             </div>
+            <div class="bar-wrapper"><div id="bar" class="bar-fill"></div></div>
+            <span id="clock">00:00:00</span>
         </div>
     </div>
 
@@ -129,55 +146,10 @@
         // --- QUIZ DATA ---
         var quizData = [
             { q: "In which year was Philips founded?", o: ["1885", "1891", "1905", "1912"], a: 1 },
-            { q: "Philips was established in which country?", o: ["Germany", "USA", "Netherlands", "Sweden"], a: 2 },
             { q: "Who founded Philips?", o: ["Gerard & Frederik", "Anton & Gerard", "Willem & Anton", "Gerard & Siemens"], a: 1 },
-            { q: "What was Philips’ first main product?", o: ["Radios", "Shavers", "Light Bulbs", "X-ray"], a: 2 },
-            { q: "In the 2010s, Philips shifted its primary focus to:", o: ["Electronics", "Healthcare technology", "Automotive", "Telecom"], a: 1 },
-            { q: "“Innovation with a purpose” primarily refers to:", o: ["Increasing profits", "Reducing competition", "Improving lives", "Expansion"], a: 2 },
-            { q: "Philips invests heavily in Research & Development for:", o: ["Real estate", "Retail shops", "Innovation", "Advertising"], a: 2 },
-            { q: "Digital transformation at Philips mainly supports:", o: ["Production", "Data-driven health", "Paper filing", "Old bulbs"], a: 1 },
-            { q: "Philips collaborates with hospitals to develop:", o: ["Office furniture", "Patient-centered tech", "Canteens", "Carpets"], a: 1 },
-            { q: "Philips’ innovation strategy is mainly centered on:", o: ["Entertainment", "Fashion", "Health technology", "Gaming"], a: 2 },
-            { q: "Philips is well known for innovations in:", o: ["MRI systems", "Farming", "Autos", "Textiles"], a: 0 },
-            { q: "MRI technology is used to produce:", o: ["Electricity", "Internal body images", "Clean water", "Radio waves"], a: 1 },
-            { q: "CT scanners primarily help in:", o: ["Printing", "Brain training", "Diagnostic imaging", "Music"], a: 2 },
-            { q: "Philips patient monitoring systems help to track:", o: ["Patients' TV time", "Vital signs", "Doctor schedules", "Food orders"], a: 1 },
-            { q: "Artificial Intelligence in Philips healthcare is used to:", o: ["Replace doctors", "Support decisions", "Type letters", "Clean floors"], a: 1 },
-            { q: "Telehealth solutions enable:", o: ["Remote monitoring", "Building bridges", "Buying groceries", "Filing papers"], a: 0 },
-            { q: "Ultrasound technology is mainly used for:", o: ["Cooking", "Weather", "Medical imaging", "Lighting"], a: 2 },
-            { q: "Philips cardiology solutions focus on:", o: ["Skin diseases", "Heart conditions", "Eye care", "Fever"], a: 1 },
-            { q: "Philips IntelliSpace platform supports:", o: ["Gaming", "Clinical data", "Social media", "Shopping"], a: 1 },
-            { q: "Hospital workflow solutions improve:", o: ["Parking", "Clinical efficiency", "Food taste", "Laundry"], a: 1 },
-            { q: "Philips originally became famous for producing:", o: ["Batteries", "Electric bulbs", "Televisions", "Cars"], a: 1 },
-            { q: "LED lighting is known for being:", o: ["Energy-efficient", "Heat-intensive", "Fragile", "Expensive"], a: 0 },
-            { q: "Smart lighting allows users to:", o: ["Change settings remotely", "Break bulbs", "Save papers", "Heat rooms"], a: 0 },
-            { q: "Philips Hue enables control of lighting via:", o: ["App or Voice", "Hand signals", "Magnets", "Solar panels"], a: 0 },
-            { q: "Connected lighting systems primarily improve:", o: ["Water flow", "Energy savings", "TV signal", "Soil quality"], a: 1 },
-            { q: "IoT in lighting enables:", o: ["Device connectivity", "Battery charging", "Paper recycling", "None"], a: 0 },
-            { q: "Sustainable lighting solutions aim to:", o: ["Increase waste", "Reduce energy use", "Make bulbs hot", "Dim cities"], a: 1 },
-            { q: "Human-centric lighting focuses on:", o: ["Decoration", "Supporting well-being", "Sound levels", "Heat"], a: 1 },
-            { q: "Smart city lighting helps to:", o: ["Reduce urban energy", "Cause traffic", "Make noise", "Add pollution"], a: 0 },
-            { q: "LED technology contributes to sustainability by:", o: ["Burn out fast", "Lasting longer", "Consuming more", "Getting hot"], a: 1 },
-            { q: "Philips Sonicare products are designed for:", o: ["Hair care", "Oral care", "Foot care", "Eye care"], a: 1 },
-            { q: "Sonicare technology uses:", o: ["Sonic vibrations", "Laser light", "Steam", "Magnets"], a: 0 },
-            { q: "Philips electric shavers are known for:", o: ["Blunt blades", "Skin-friendly tech", "Using coal", "Noise"], a: 1 },
-            { q: "Philips air purifiers improve:", o: ["Water quality", "Indoor air quality", "Gas mileage", "Soil"], a: 1 },
-            { q: "Smart kitchen appliances often include:", o: ["App connectivity", "Cassette players", "Fax machines", "Typewriters"], a: 0 },
-            { q: "Health apps connected to Philips help users:", o: ["Track health data", "Play chess", "Watch TV", "Book flights"], a: 0 },
-            { q: "Data tracking supports:", o: ["Personalized insights", "Device damage", "Paper waste", "Heat"], a: 0 },
-            { q: "Philips baby monitors may include:", o: ["Video monitoring", "Toasters", "Calculators", "Clocks"], a: 0 },
-            { q: "Sustainable consumer products may use:", o: ["Recycled materials", "Excess plastic", "Chemicals", "Glue"], a: 0 },
-            { q: "User feedback helps Philips to:", o: ["Ignore users", "Improve products", "Lower quality", "Stop work"], a: 1 },
             { q: "Philips aims to improve how many lives by 2030?", o: ["100m", "500m", "1 billion", "5 billion"], a: 2 },
-            { q: "Circular economy principles involve:", o: ["Throw-away", "Recycling and reuse", "Burning", "Single-use"], a: 1 },
-            { q: "Eco-design focuses on:", o: ["Reducing impact", "Adding parts", "Using more oil", "Fancy boxes"], a: 0 },
-            { q: "Reducing carbon emissions supports:", o: ["Climate protection", "Global warming", "Coal mining", "Pollution"], a: 0 },
-            { q: "Renewable energy includes:", o: ["Coal", "Diesel", "Solar power", "Natural gas"], a: 2 },
-            { q: "Responsible sourcing ensures:", o: ["Ethical supply chains", "Illegal work", "Cheaper parts", "Waste"], a: 0 },
-            { q: "Philips improves healthcare access by:", o: ["Digital health", "Closing clinics", "Cutting staff", "Fewer scans"], a: 0 },
-            { q: "Emerging technologies in Philips include:", o: ["AI & Data", "Rotary phones", "VHS tapes", "Floppy disks"], a: 0 },
-            { q: "Innovation helps health challenges by:", o: ["Raising costs", "Medical solutions", "Limiting access", "Ignoring stats"], a: 1 },
-            { q: "Future of Philips innovation is centered on:", o: ["Toys", "Health & Sustainability", "Fashion", "Luxury cars"], a: 1 }
+            { q: "What was Philips’ first main product?", o: ["Radios", "Shavers", "Light Bulbs", "X-ray"], a: 2 },
+            { q: "Artificial Intelligence in Philips healthcare is used to:", o: ["Replace doctors", "Support decisions", "Type letters", "Clean floors"], a: 1 }
         ];
 
         function openQuiz() {
@@ -202,9 +174,10 @@
         // --- PHYSICS ENGINE ---
         var moon = { d:380, sz:60, spd:0.0012, ang:Math.random()*7, col:"#f0f9ff", craters:[] };
         for(var i=0; i<20; i++) moon.craters.push({x:(Math.random()-0.5)*100, y:(Math.random()-0.5)*100, r:Math.random()*5+1, op:Math.random()*0.3});
-        var saturn = { d:650, sz:32, spd:0.0002, ang:Math.random()*7, col:"#d8ae8d" };
+        var saturn = { d:650, sz:32, spd:0.0002, ang:Math.random()*7, col: "#d8ae8d" };
         var planets = [{id:'mer',d:130,sz:6,spd:0.0008,col:"#A5A5A5",ang:Math.random()*7},{id:'jup',d:530,sz:28,spd:0.0003,col:"#c3a48e",ang:Math.random()*7}];
-        var worldGeo = null, featureIndex = {}, flashingISO = {}, comets = [];
+        
+        var worldGeo = null, featureIndex = {}, flashingISO = {};
         var canvas = document.getElementById("main-canvas"), context = canvas.getContext("2d");
         var w, h, isDragging = false, lastX, lastY, rotX = 0, rotY = TARGET_TILT, lastT = Date.now(), lastIntT = Date.now();
 
@@ -270,7 +243,6 @@
                     } else { delete flashingISO[iso]; }
                 }
             }
-            updateComets();
             requestAnimationFrame(renderLoop);
         }
 
@@ -286,8 +258,8 @@
             for(var i=0; i<8; i++) { context.beginPath(); context.ellipse(Math.sin(i)*15, Math.cos(i)*10, 20, 12, i, 0, 7); context.fill(); }
             context.restore();
             var shad = context.createRadialGradient(px + Math.cos(ang)*p.sz*0.5, py + Math.sin(ang)*p.sz*0.5, 0, px, py, p.sz);
-            shad.addColorStop(0, "rgba(0,0,0,0)"); shad.addColorStop(1, "rgba(0,0,0,0.95)");
-            context.beginPath(); context.arc(px, py, p.sz + 0.5, 0, 7); context.fillStyle = shad; context.fill();
+            shad.addColorStop(0,"rgba(0,0,0,0)"); shad.addColorStop(1,"rgba(0,0,0,0.95)");
+            context.beginPath(); context.arc(px,py,p.sz+0.5,0,7); context.fillStyle=shad; context.fill();
         }
 
         function drawSaturn(p,ex,ey,sx,sy,dt){
@@ -313,16 +285,6 @@
             var shad=context.createRadialGradient(px+Math.cos(ang)*p.sz*0.5, py+Math.sin(ang)*p.sz*0.5, 0, px,py,p.sz);
             shad.addColorStop(0,"rgba(0,0,0,0)"); shad.addColorStop(1,"rgba(0,0,0,0.9)");
             context.beginPath(); context.arc(px,py,p.sz+0.5,0,7); context.fillStyle=shad; context.fill();
-        }
-
-        function updateComets() {
-            if (Math.random() > 0.996) comets.push({ x:Math.random()*w, y:-50, vx:-14, vy:10, life:1 });
-            for (var i=0; i<comets.length; i++) {
-                var c = comets[i]; var g = context.createLinearGradient(c.x,c.y,c.x-c.vx*12,c.y-c.vy*12);
-                g.addColorStop(0,"white"); g.addColorStop(1,"transparent");
-                context.strokeStyle=g; context.lineWidth=4; context.beginPath(); context.moveTo(c.x,c.y); context.lineTo(c.x+120,c.y-100); context.stroke();
-                c.x+=c.vx; c.y+=c.vy; c.life-=0.008; if(c.life<=0){ comets.splice(i,1); i--; }
-            }
         }
 
         function startSimulation() {
