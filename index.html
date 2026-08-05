@@ -59,7 +59,7 @@
 
         .stats-box { pointer-events: auto; width: 100%; }
         .label { font-size: 1.6vw; color: #38bdf8; text-transform: uppercase; font-weight: 900; letter-spacing: 3px; }
-        .count { font-family: 'Rajdhani', Arial, sans-serif; font-variant-numeric: tabular-nums; font-size: 6.8vw; font-weight: 700; color: #fbbf24; line-height: 1; margin: 5px 0; }
+        .count { font-family: 'Rajdhani', Arial, sans-serif; font-variant-numeric: tabular-nums; display: inline-block; white-space: nowrap; font-size: 6.8vw; font-weight: 700; color: #fbbf24; line-height: 1; margin: 5px 0; }
         
         .progress-ui { width: 85%; margin-top: 15px; }
         .bar-wrapper {
@@ -87,8 +87,9 @@
 
         /* 4. CANVAS */
         .stars-container { position: absolute; width: 100%; height: 100%; z-index: 1; pointer-events: none; }
-        .star { position: absolute; background: white; border-radius: 50%; animation: blink var(--t) infinite ease-in-out; }
-        @keyframes blink { 0%, 100% { opacity: 0.1; transform: scale(0.8); } 50% { opacity: 0.8; } }
+        .star { position: absolute; background: #ffffff; border-radius: 50%; box-shadow: 0 0 4px rgba(255,255,255,0.9); animation: blink var(--t) infinite ease-in-out; animation-delay: var(--d); }
+        @keyframes blink { 0%, 100% { opacity: 0.12; transform: scale(0.6); } 50% { opacity: 1; transform: scale(1.15); } }
+        .star.bright { box-shadow: 0 0 6px #fff, 0 0 14px #bfdbfe, 0 0 22px rgba(147,197,253,0.7); }
         .canvas-container { position: absolute; left: 0; top: 0; width: 100vw; height: 100vh; z-index: 5; }
         #main-canvas { width: 100%; height: 100%; cursor: grab; }
         #main-canvas:active { cursor: grabbing; }
@@ -354,22 +355,42 @@
         }
 
         function updateComets() {
-            if (Math.random() > 0.992) comets.push({ x:Math.random()*w, y:-50, vx:-14, vy:10, life:1 });
-            for (var i=0; i<comets.length; i++) {
+            if (Math.random() > 0.986) {
+                var angle = 0.28 + Math.random() * 0.28;   // downward, leftward trajectory
+                var speed = 6 + Math.random() * 6;
+                comets.push({
+                    x: w * (0.35 + Math.random() * 0.65), y: -60,
+                    vx: -Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
+                    r: 1.6 + Math.random() * 2, tail: 150 + Math.random() * 160, life: 1
+                });
+            }
+            for (var i = 0; i < comets.length; i++) {
                 var c = comets[i];
-                var tailX = c.x - c.vx*22, tailY = c.y - c.vy*22;
-                var g = context.createLinearGradient(c.x, c.y, tailX, tailY);
-                g.addColorStop(0,"rgba(255,255,255,1)"); g.addColorStop(0.3,"rgba(191, 219, 254, 0.8)"); g.addColorStop(1,"transparent");
+                var sp = Math.sqrt(c.vx*c.vx + c.vy*c.vy) || 1;
+                var ux = -c.vx / sp, uy = -c.vy / sp;                 // tail trails opposite to motion
+                var tx = c.x + ux * c.tail, ty = c.y + uy * c.tail;
                 context.save();
-                context.shadowBlur = 25; context.shadowColor = "#bfdbfe";
-                context.strokeStyle=g; context.lineWidth=7; context.lineCap="round";
-                context.beginPath(); context.moveTo(c.x, c.y); context.lineTo(tailX, tailY); context.stroke();
-                // Bright comet head
-                var head = context.createRadialGradient(c.x, c.y, 0, c.x, c.y, 9);
-                head.addColorStop(0,"#ffffff"); head.addColorStop(1,"rgba(191, 219, 254, 0)");
-                context.beginPath(); context.arc(c.x, c.y, 9, 0, 7); context.fillStyle=head; context.fill();
+                // Luminous tapering tail
+                var g = context.createLinearGradient(c.x, c.y, tx, ty);
+                g.addColorStop(0, "rgba(255,255,255," + (0.95 * c.life) + ")");
+                g.addColorStop(0.15, "rgba(219,234,254," + (0.7 * c.life) + ")");
+                g.addColorStop(0.5, "rgba(147,197,253," + (0.35 * c.life) + ")");
+                g.addColorStop(1, "rgba(147,197,253,0)");
+                context.strokeStyle = g; context.lineWidth = c.r * 2.4; context.lineCap = "round";
+                context.shadowBlur = 12; context.shadowColor = "rgba(191,219,254," + c.life + ")";
+                context.beginPath(); context.moveTo(c.x, c.y); context.lineTo(tx, ty); context.stroke();
+                // Coma (soft halo around the nucleus)
+                context.shadowBlur = 0;
+                var coma = context.createRadialGradient(c.x, c.y, 0, c.x, c.y, c.r * 5);
+                coma.addColorStop(0, "rgba(255,255,255," + c.life + ")");
+                coma.addColorStop(0.4, "rgba(191,219,254," + (0.45 * c.life) + ")");
+                coma.addColorStop(1, "transparent");
+                context.beginPath(); context.arc(c.x, c.y, c.r * 5, 0, 7); context.fillStyle = coma; context.fill();
+                // Bright nucleus
+                context.beginPath(); context.arc(c.x, c.y, c.r, 0, 7); context.fillStyle = "#ffffff"; context.fill();
                 context.restore();
-                c.x+=c.vx; c.y+=c.vy; c.life-=0.008; if(c.life<=0){ comets.splice(i,1); i--; }
+                c.x += c.vx; c.y += c.vy; c.life -= 0.006;
+                if (c.life <= 0 || c.x < -150 || c.y > h + 150) { comets.splice(i, 1); i--; }
             }
         }
 
@@ -387,14 +408,41 @@
         }
 
         var field = document.getElementById('starfield');
-        for (var i = 0; i < 70; i++) {
+        for (var i = 0; i < 180; i++) {
             var s = document.createElement('div'); s.className = 'star';
-            s.style.width = s.style.height = (1 + Math.random()*2) + 'px';
+            var bright = Math.random() > 0.82;
+            if (bright) s.className += ' bright';
+            var size = bright ? (2 + Math.random()*2.5) : (0.8 + Math.random()*1.6);
+            s.style.width = s.style.height = size + 'px';
             s.style.left = Math.random()*100 + '%'; s.style.top = Math.random()*100 + '%';
-            s.style.setProperty('--t', (2 + Math.random()*3) + 's');
+            s.style.setProperty('--t', (1.5 + Math.random()*3.5) + 's');
+            s.style.setProperty('--d', (Math.random()*4) + 's');
             field.appendChild(s);
         }
-        window.onresize = setSizes; init();
+        window.onresize = function() { setSizes(); fitProgress(); }; init();
+
+        // Match the progress bar width to the label above it, and size the counter to that width (fixed).
+        var countLabel = document.querySelector('.stats-box .label');
+        var progressUI = document.querySelector('.progress-ui');
+        var countEl = document.getElementById('birthCount');
+        function fitProgress() {
+            if (!countLabel || !progressUI) return;
+            var w = countLabel.getBoundingClientRect().width;
+            if (w > 0) progressUI.style.width = w + 'px';
+            fitCounter(w);
+        }
+        function fitCounter(w) {
+            if (!countEl || !w) return;
+            var prev = countEl.innerText;
+            countEl.innerText = "888.888"; // widest expected value so real numbers never overflow
+            var cur = countEl.getBoundingClientRect().width;
+            var base = parseFloat(getComputedStyle(countEl).fontSize);
+            if (cur > 0) countEl.style.fontSize = (base * (w / cur)) + 'px';
+            countEl.innerText = prev;
+        }
+        fitProgress();
+        window.addEventListener('load', fitProgress);
+        if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitProgress);
 
         // Randomly recolor the M/C/C first letters with a bright color, all together.
         var firstChars = document.getElementsByClassName('firstchar');
