@@ -125,6 +125,8 @@
     <script>
         // --- TV-SAFE ES5 SCRIPT ---
         var BIRTH_RATE = 4.34, EARTH_ROT_SPD = 0.008, RESUME_DELAY = 5000, TARGET_TILT = -15;
+        // Full page refresh interval (ms) to clear any accumulated memory/state on long-running TVs.
+        var RELOAD_MS = 3 * 60 * 60 * 1000;
 
         // --- QUIZ DATA ---
         var quizData = [
@@ -168,6 +170,14 @@
         var projection = d3.geoOrthographic().scale(h/2.8).translate([w*0.74, h*0.5]).clipAngle(90);
         var path = d3.geoPath(projection, context);
 
+        // Recover the 2D context if the browser/GPU reclaims it after long uptime (prevents permanent blank screen).
+        canvas.addEventListener('contextlost', function(e) { e.preventDefault(); }, false);
+        canvas.addEventListener('contextrestored', function() {
+            context = canvas.getContext("2d");
+            path = d3.geoPath(projection, context);
+            setSizes();
+        }, false);
+
         // --- FIXED UNIVERSAL DRAG ---
         function startDrag(x, y) { isDragging = true; lastX = x; lastY = y; lastIntT = Date.now(); }
         function moveDrag(x, y) { 
@@ -190,11 +200,8 @@
         }, {passive: false});
         window.addEventListener('touchend', endDrag);
 
-        function checkSleep() {
-            var hr = new Date().getHours();
-            document.getElementById('sleep-overlay').style.display = (hr >= 20 || hr < 6) ? 'block' : 'none';
-        }
-        setInterval(checkSleep, 30000);
+        // Always-on display: sleep overlay disabled so the TV never blanks out.
+        document.getElementById('sleep-overlay').style.display = 'none';
 
         function init() {
             d3.json("https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_admin_0_countries.geojson").then(function(data) {
@@ -206,8 +213,20 @@
         }
 
         function renderLoop() {
+            // Schedule the next frame FIRST so a transient draw error can never kill the loop and blank the TV.
+            requestAnimationFrame(renderLoop);
+            try { renderFrame(); } catch (err) { if (window.console) console.warn('render frame skipped:', err); }
+        }
+
+        function renderFrame() {
             var now = Date.now(), dt = now - lastT; lastT = now;
-            
+            if (dt < 0 || dt > 1000) dt = 16; // clamp after tab throttling / context recovery
+
+            // Keep rotation bounded and finite to avoid float precision loss and non-finite draw coords over long runtimes.
+            if (!isFinite(rotX)) rotX = 0;
+            if (!isFinite(rotY)) rotY = TARGET_TILT;
+            rotX = rotX % 360;
+
             // --- AUTO RESUME LOGIC ---
             if (!isDragging) {
                 if (now - lastIntT > RESUME_DELAY) {
@@ -246,7 +265,6 @@
                 }
             }
             updateComets();
-            requestAnimationFrame(renderLoop);
         }
 
         function drawMoon(p, ex, ey, sx, sy, dt) {
@@ -322,6 +340,13 @@
             field.appendChild(s);
         }
         window.onresize = setSizes; init();
+
+        // Kiosk safety net: periodically refresh to clear accumulated memory/state; skip while a user is interacting.
+        setInterval(function() {
+            if (!isDragging && document.getElementById('quiz-overlay').style.display !== 'flex') {
+                location.reload();
+            }
+        }, RELOAD_MS);
     </script>
 </body>
 </html>
