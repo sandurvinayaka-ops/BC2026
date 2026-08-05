@@ -49,18 +49,10 @@
         .main-heading { font-size: 3.1vw; color: #a855f7; font-weight: 800; white-space: nowrap; }
         .main-heading span { display: inline-block; transition: all 0.5s ease; }
         
-        @keyframes wordPulse {
-            0%, 20%, 100% { transform: scale(1); color: #a855f7; text-shadow: 0 0 20px rgba(168, 85, 247, 0.4); }
-            10% { transform: scale(1.15); color: #fbbf24; text-shadow: 0 0 30px rgba(251, 191, 36, 0.6); }
-        }
         @keyframes ampJump { 0%, 55%, 75%, 100% { transform: translateY(0); } 65% { transform: translateY(-20px); } }
 
-        .w1 { animation: wordPulse 3s infinite 0.0s; }
+        .firstchar { transition: color 0.6s ease, text-shadow 0.6s ease; }
         .w_amp { color: #a855f7 !important; margin: 0 0.5vw; animation: ampJump 3s infinite; }
-        .w2 { animation: wordPulse 3s infinite 0.6s; }
-        .w3 { animation: wordPulse 3s infinite 1.2s; }
-        .w4 { animation: wordPulse 3s infinite 1.8s; } /* Women's */
-        .w5 { animation: wordPulse 3s infinite 2.4s; } /* Health */
 
         .stats-box { pointer-events: auto; width: 100%; }
         .label { font-size: 1.6vw; color: #38bdf8; text-transform: uppercase; font-weight: 900; letter-spacing: 3px; }
@@ -101,7 +93,7 @@
         <div class="header-box">
             <div class="philips-title">PHILIPS</div>
             <h1 class="main-heading">
-                <span class="w1">Mother</span> <span class="w_amp">&</span> <span class="w2">Child</span> <span class="w3">Care</span> — <span class="w4">Women's</span> <span class="w5">Health</span>
+                <span class="firstchar">M</span>other <span class="w_amp">&</span> <span class="firstchar">C</span>hild <span class="firstchar">C</span>are — Women's Health
             </h1>
         </div>
 
@@ -241,26 +233,57 @@
             var ex=w*0.74, ey=h*0.5;
 
             var sAng = now * 0.00003, sx = ex + Math.cos(sAng)*(w*0.55), sy = ey + Math.sin(sAng)*(h*0.4);
-            var sGrad = context.createRadialGradient(sx,sy,0,sx,sy,60);
-            sGrad.addColorStop(0,"#ffffff"); sGrad.addColorStop(0.3,"#fbbf24"); sGrad.addColorStop(1,"transparent");
-            context.beginPath(); context.arc(sx,sy,60,0,7); context.fillStyle=sGrad; context.fill();
+            var sunR = 90;
+            // Soft outer corona glow (kept separate so the disc stays crisp)
+            var coronaGrad = context.createRadialGradient(sx,sy,sunR*0.9,sx,sy,sunR*3);
+            coronaGrad.addColorStop(0,"rgba(251, 191, 36, 0.45)"); coronaGrad.addColorStop(0.5,"rgba(251, 146, 60, 0.18)"); coronaGrad.addColorStop(1,"transparent");
+            context.beginPath(); context.arc(sx,sy,sunR*3,0,7); context.fillStyle=coronaGrad; context.fill();
+            // Sharp, focused sun disc with a defined edge
+            var sGrad = context.createRadialGradient(sx,sy,0,sx,sy,sunR);
+            sGrad.addColorStop(0,"#ffffff"); sGrad.addColorStop(0.45,"#fef3c7"); sGrad.addColorStop(0.8,"#fcd34d"); sGrad.addColorStop(1,"#f59e0b");
+            context.save(); context.shadowBlur = 40; context.shadowColor = "rgba(251, 191, 36, 0.9)";
+            context.beginPath(); context.arc(sx,sy,sunR,0,7); context.fillStyle=sGrad; context.fill();
+            context.restore();
 
             drawMoon(moon, ex, ey, sx, sy, dt);
             drawSaturn(saturn, ex, ey, sx, sy, dt);
             for(var i=0; i<planets.length; i++) drawPlanet(planets[i], ex, ey, sx, sy, dt);
 
             var radius = projection.scale();
+            // Atmospheric halo so the globe stands out against the black background
+            var atmo = context.createRadialGradient(ex, ey, radius*0.9, ex, ey, radius*1.18);
+            atmo.addColorStop(0, "rgba(56,189,248,0.0)"); atmo.addColorStop(0.35, "rgba(56,189,248,0.35)"); atmo.addColorStop(1, "transparent");
+            context.beginPath(); context.arc(ex, ey, radius*1.18, 0, 7); context.fillStyle = atmo; context.fill();
+
             var oceanGrad = context.createRadialGradient(ex-radius/2.5, ey-radius/2.5, radius/20, ex, ey, radius);
-            oceanGrad.addColorStop(0, "#3b82f6"); oceanGrad.addColorStop(0.5, "#0a192f"); oceanGrad.addColorStop(1, "#020617");
+            oceanGrad.addColorStop(0, "#60a5fa"); oceanGrad.addColorStop(0.4, "#1d4ed8"); oceanGrad.addColorStop(0.75, "#0a192f"); oceanGrad.addColorStop(1, "#020617");
             context.beginPath(); context.arc(ex, ey, radius, 0, 7); context.fillStyle = oceanGrad; context.fill();
 
             if (worldGeo) {
-                context.beginPath(); path(worldGeo); context.fillStyle = "#10b981"; context.fill();
-                context.strokeStyle = "rgba(255,255,255,0.3)"; context.lineWidth = 0.6; context.stroke();
+                // Landmasses: brighter fill and clearer borders for better visibility on the globe
+                context.save();
+                context.shadowBlur = 10; context.shadowColor = "rgba(0,0,0,0.45)";
+                context.beginPath(); path(worldGeo);
+                context.fillStyle = "#1fe3a4"; context.fill();
+                context.restore();
+                context.strokeStyle = "rgba(255,255,255,0.6)"; context.lineWidth = 1; context.stroke();
+
+                // Birth flashes: a glowing cyan pulse per country that smoothly fades out
+                var FLASH_MS = 1800;
                 for (var iso in flashingISO) {
-                    if (now - flashingISO[iso] < 1500) {
+                    var age = now - flashingISO[iso];
+                    if (age < FLASH_MS) {
                         var feat = featureIndex[iso];
-                        if(feat) { context.beginPath(); path(feat); context.fillStyle="#ffffff"; context.fill(); context.strokeStyle="white"; context.stroke(); }
+                        if (feat) {
+                            var fade = 1 - (age / FLASH_MS);
+                            context.save();
+                            context.globalAlpha = fade;
+                            context.shadowBlur = 35; context.shadowColor = "#facc15";
+                            context.beginPath(); path(feat);
+                            context.fillStyle = "#fff9c4"; context.fill();
+                            context.lineWidth = 1.8; context.strokeStyle = "#fde047"; context.stroke();
+                            context.restore();
+                        }
                     } else { delete flashingISO[iso]; }
                 }
             }
@@ -309,11 +332,21 @@
         }
 
         function updateComets() {
-            if (Math.random() > 0.996) comets.push({ x:Math.random()*w, y:-50, vx:-14, vy:10, life:1 });
+            if (Math.random() > 0.992) comets.push({ x:Math.random()*w, y:-50, vx:-14, vy:10, life:1 });
             for (var i=0; i<comets.length; i++) {
-                var c = comets[i]; var g = context.createLinearGradient(c.x,c.y,c.x-c.vx*12,c.y-c.vy*12);
-                g.addColorStop(0,"white"); g.addColorStop(1,"transparent");
-                context.strokeStyle=g; context.lineWidth=4; context.beginPath(); context.moveTo(c.x,c.y); context.lineTo(c.x+120,c.y-100); context.stroke();
+                var c = comets[i];
+                var tailX = c.x - c.vx*22, tailY = c.y - c.vy*22;
+                var g = context.createLinearGradient(c.x, c.y, tailX, tailY);
+                g.addColorStop(0,"rgba(255,255,255,1)"); g.addColorStop(0.3,"rgba(191, 219, 254, 0.8)"); g.addColorStop(1,"transparent");
+                context.save();
+                context.shadowBlur = 25; context.shadowColor = "#bfdbfe";
+                context.strokeStyle=g; context.lineWidth=7; context.lineCap="round";
+                context.beginPath(); context.moveTo(c.x, c.y); context.lineTo(tailX, tailY); context.stroke();
+                // Bright comet head
+                var head = context.createRadialGradient(c.x, c.y, 0, c.x, c.y, 9);
+                head.addColorStop(0,"#ffffff"); head.addColorStop(1,"rgba(191, 219, 254, 0)");
+                context.beginPath(); context.arc(c.x, c.y, 9, 0, 7); context.fillStyle=head; context.fill();
+                context.restore();
                 c.x+=c.vx; c.y+=c.vy; c.life-=0.008; if(c.life<=0){ comets.splice(i,1); i--; }
             }
         }
@@ -340,6 +373,20 @@
             field.appendChild(s);
         }
         window.onresize = setSizes; init();
+
+        // Randomly recolor the M/C/C first letters with a bright color, all together.
+        var firstChars = document.getElementsByClassName('firstchar');
+        function randomizeFirstChars() {
+            var hue = Math.floor(Math.random() * 360);
+            var color = 'hsl(' + hue + ', 100%, 60%)';
+            var glow = 'hsl(' + hue + ', 100%, 50%)';
+            for (var i = 0; i < firstChars.length; i++) {
+                firstChars[i].style.color = color;
+                firstChars[i].style.textShadow = '0 0 30px ' + glow;
+            }
+        }
+        randomizeFirstChars();
+        setInterval(randomizeFirstChars, 1500);
 
         // Kiosk safety net: periodically refresh to clear accumulated memory/state; skip while a user is interacting.
         setInterval(function() {
