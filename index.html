@@ -142,6 +142,8 @@
         var BIRTH_RATE = 4.34, EARTH_ROT_SPD = 0.008, RESUME_DELAY = 5000, TARGET_TILT = -15;
         // Full page refresh interval (ms) to clear any accumulated memory/state on long-running TVs.
         var RELOAD_MS = 3 * 60 * 60 * 1000;
+        // Max internal canvas resolution (longest side, px). Lower = smoother on 4K TVs.
+        var RENDER_CAP = 1920;
 
         // --- QUIZ DATA ---
         var quizData = [
@@ -193,7 +195,15 @@
         var canvas = document.getElementById("main-canvas"), context = canvas.getContext("2d");
         var w, h, isDragging = false, lastX, lastY, rotX = 0, rotY = TARGET_TILT, lastT = Date.now(), lastIntT = Date.now();
 
-        function setSizes() { w = window.innerWidth; h = window.innerHeight; canvas.width = w; canvas.height = h; }
+        function setSizes() {
+            // Cap the internal render resolution so 4K TVs don't rasterize a huge canvas every frame (keeps motion smooth).
+            var vw = window.innerWidth, vh = window.innerHeight;
+            var scale = Math.min(1, RENDER_CAP / Math.max(vw, vh));
+            w = Math.max(1, Math.round(vw * scale));
+            h = Math.max(1, Math.round(vh * scale));
+            canvas.width = w; canvas.height = h;
+            context.imageSmoothingEnabled = true;
+        }
         setSizes();
         var projection = d3.geoOrthographic().scale(h/2.8).translate([w*0.74, h*0.5]).clipAngle(90);
         var path = d3.geoPath(projection, context);
@@ -271,9 +281,9 @@
             var sAng = now * 0.00003, sx = ex + Math.cos(sAng)*(w*0.55), sy = ey + Math.sin(sAng)*(h*0.4);
             var sunR = 90;
             // Soft outer corona glow (kept separate so the disc stays crisp)
-            var coronaGrad = context.createRadialGradient(sx,sy,sunR*0.9,sx,sy,sunR*3);
+            var coronaGrad = context.createRadialGradient(sx,sy,sunR*0.9,sx,sy,sunR*2.4);
             coronaGrad.addColorStop(0,"rgba(251, 191, 36, 0.45)"); coronaGrad.addColorStop(0.5,"rgba(251, 146, 60, 0.18)"); coronaGrad.addColorStop(1,"transparent");
-            context.beginPath(); context.arc(sx,sy,sunR*3,0,7); context.fillStyle=coronaGrad; context.fill();
+            context.beginPath(); context.arc(sx,sy,sunR*2.4,0,7); context.fillStyle=coronaGrad; context.fill();
             // Sharp, focused sun disc with a defined edge (corona above already supplies the glow)
             var sGrad = context.createRadialGradient(sx,sy,0,sx,sy,sunR);
             sGrad.addColorStop(0,"#ffffff"); sGrad.addColorStop(0.45,"#fef3c7"); sGrad.addColorStop(0.8,"#fcd34d"); sGrad.addColorStop(1,"#f59e0b");
@@ -301,20 +311,20 @@
                 context.fillStyle = "#1fe3a4"; context.fill();
                 context.strokeStyle = "rgba(255,255,255,0.6)"; context.lineWidth = 1; context.stroke();
 
-                // Birth flashes: a glowing cyan pulse per country that smoothly fades out
-                var FLASH_MS = 1800;
+                // Birth flashes: a bright gold pulse per country, held bright then fading for clear visibility
+                var FLASH_MS = 2500;
                 for (var iso in flashingISO) {
                     var age = now - flashingISO[iso];
                     if (age < FLASH_MS) {
                         var feat = featureIndex[iso];
                         if (feat) {
-                            var fade = 1 - (age / FLASH_MS);
+                            var fade = Math.min(1, (1 - age / FLASH_MS) * 1.8); // stay fully bright, then fade
                             context.save();
                             context.globalAlpha = fade;
-                            context.shadowBlur = 35; context.shadowColor = "#facc15";
+                            context.shadowBlur = 50; context.shadowColor = "#fbbf24";
                             context.beginPath(); path(feat);
-                            context.fillStyle = "#fff9c4"; context.fill();
-                            context.lineWidth = 1.8; context.strokeStyle = "#fde047"; context.stroke();
+                            context.fillStyle = "#ffd700"; context.fill();
+                            context.lineWidth = 2.5; context.strokeStyle = "#ffffff"; context.stroke();
                             context.restore();
                         }
                     } else { delete flashingISO[iso]; }
