@@ -344,7 +344,6 @@
                             var fade = Math.min(1, (1 - age / FLASH_MS) * 1.8); // stay fully bright, then fade
                             context.save();
                             context.globalAlpha = fade;
-                            context.shadowBlur = 50; context.shadowColor = "#fbbf24";
                             context.beginPath(); path(feat);
                             context.fillStyle = "#ffd700"; context.fill();
                             context.lineWidth = 2.5; context.strokeStyle = "#ffffff"; context.stroke();
@@ -354,7 +353,7 @@
                 }
             }
             drawSoothers(now, dt);
-            updateComets();
+            updateComets(dt);
         }
 
         function drawMoon(p, ex, ey, sx, sy, dt) {
@@ -438,7 +437,8 @@
             context.restore();
         }
 
-        function updateComets() {
+        function updateComets(dt) {
+            var f = dt / 16.6667; // normalize movement to 60fps so speed is framerate-independent
             if (Math.random() > 0.986) {
                 var angle = 0.28 + Math.random() * 0.28;   // downward, leftward trajectory
                 var speed = 6 + Math.random() * 6;
@@ -477,7 +477,7 @@
                 // Bright nucleus
                 context.beginPath(); context.arc(c.x, c.y, c.r * 0.9, 0, 7); context.fillStyle = "#ffffff"; context.fill();
                 context.restore();
-                c.x += c.vx; c.y += c.vy; c.life -= 0.006;
+                c.x += c.vx * f; c.y += c.vy * f; c.life -= 0.006 * f;
                 if (c.life <= 0 || c.x < -150 || c.y > h + 150) { comets.splice(i, 1); i--; }
             }
         }
@@ -496,7 +496,7 @@
         }
 
         var field = document.getElementById('starfield');
-        for (var i = 0; i < 180; i++) {
+        for (var i = 0; i < 110; i++) {
             var s = document.createElement('div'); s.className = 'star';
             var bright = Math.random() > 0.82;
             if (bright) s.className += ' bright';
