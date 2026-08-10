@@ -143,7 +143,7 @@
         // Full page refresh interval (ms) to clear any accumulated memory/state on long-running TVs.
         var RELOAD_MS = 3 * 60 * 60 * 1000;
         // Max internal canvas resolution (longest side, px). Lower = smoother on 4K TVs.
-        var RENDER_CAP = 1920;
+        var RENDER_CAP = 1600;
 
         // --- QUIZ DATA ---
         var quizData = [
@@ -243,11 +243,34 @@
 
         function init() {
             d3.json("https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_admin_0_countries.geojson").then(function(data) {
+                simplifyGeo(data, 2); // fewer vertices => cheaper per-frame reprojection => smoother motion
                 worldGeo = data;
                 for(var i=0; i<data.features.length; i++){ var f = data.features[i]; featureIndex[f.properties.ISO_A3 || f.properties.ADM0_A3] = f; }
                 document.getElementById('loading').style.display='none';
                 requestAnimationFrame(renderLoop); startSimulation();
             });
+        }
+
+        // Decimate polygon rings (keep every Nth point) to reduce vertex count while keeping rings closed.
+        function simplifyGeo(geo, stride) {
+            function ring(r) {
+                if (r.length <= 10) return r;
+                var out = [];
+                for (var i = 0; i < r.length; i += stride) out.push(r[i]);
+                var last = r[r.length - 1];
+                var end = out[out.length - 1];
+                if (end[0] !== last[0] || end[1] !== last[1]) out.push(last);
+                return out;
+            }
+            for (var f = 0; f < geo.features.length; f++) {
+                var g = geo.features[f].geometry; if (!g) continue;
+                if (g.type === 'Polygon') {
+                    for (var p = 0; p < g.coordinates.length; p++) g.coordinates[p] = ring(g.coordinates[p]);
+                } else if (g.type === 'MultiPolygon') {
+                    for (var m = 0; m < g.coordinates.length; m++)
+                        for (var q = 0; q < g.coordinates[m].length; q++) g.coordinates[m][q] = ring(g.coordinates[m][q]);
+                }
+            }
         }
 
         function renderLoop() {
