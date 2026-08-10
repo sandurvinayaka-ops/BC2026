@@ -201,24 +201,50 @@
             { q: "In the 2010s, Philips shifted its primary focus to:", o: ["Electronics", "Healthcare technology", "Automotive", "Telecom"], a: 1 }
         ];
 
+        var quizInactivityTimer = null, quizNextTimer = null;
         function openQuiz() {
-            var overlay = document.getElementById('quiz-overlay'), qText = document.getElementById('quiz-question'), oBox = document.getElementById('quiz-options'), fBox = document.getElementById('quiz-feedback');
-            fBox.innerText = ""; oBox.innerHTML = ""; overlay.style.display = "flex";
+            document.getElementById('quiz-overlay').style.display = "flex";
+            showQuizQuestion();
+            resetQuizInactivity();
+        }
+        function showQuizQuestion() {
+            var qText = document.getElementById('quiz-question'), oBox = document.getElementById('quiz-options'), fBox = document.getElementById('quiz-feedback');
+            fBox.innerHTML = ""; oBox.innerHTML = "";
             var qObj = quizData[Math.floor(Math.random() * quizData.length)];
             qText.innerText = qObj.q;
             for(var i=0; i<qObj.o.length; i++){
                 var btn = document.createElement('button');
                 btn.className = "option-btn"; btn.innerText = String.fromCharCode(65 + i) + ". " + qObj.o[i];
                 btn.onclick = (function(idx, correct, correctText) {
-                    return function() {
-                        if (idx === correct) { fBox.innerHTML = "<span style='color:#4ade80'>👍 Thumbs Up!</span>"; } 
-                        else { fBox.innerHTML = "<span style='color:#f43f5e'>Better luck next time.</span><br><span style='color:white; font-size:1.5vw; font-weight:normal;'>Correct: " + correctText + "</span>"; }
-                        setTimeout(function(){ overlay.style.display = "none"; }, 4000);
-                    };
+                    return function() { answerQuiz(idx, correct, correctText); };
                 })(i, qObj.a, qObj.o[qObj.a]);
                 oBox.appendChild(btn);
             }
         }
+        function answerQuiz(idx, correct, correctText) {
+            var fBox = document.getElementById('quiz-feedback');
+            if (idx === correct) { fBox.innerHTML = "<span style='color:#4ade80'>👍 Thumbs Up!</span>"; }
+            else { fBox.innerHTML = "<span style='color:#f43f5e'>Better luck next time.</span><br><span style='color:white; font-size:1.5vw; font-weight:normal;'>Correct: " + correctText + "</span>"; }
+            var btns = document.getElementById('quiz-options').getElementsByTagName('button');
+            for (var b = 0; b < btns.length; b++) btns[b].disabled = true;
+            resetQuizInactivity();
+            clearTimeout(quizNextTimer);
+            quizNextTimer = setTimeout(showQuizQuestion, 2500); // advance to the next question
+        }
+        function resetQuizInactivity() {
+            clearTimeout(quizInactivityTimer);
+            quizInactivityTimer = setTimeout(closeQuiz, 8000); // no touch for 8s -> back to main screen
+        }
+        function closeQuiz() {
+            clearTimeout(quizNextTimer); clearTimeout(quizInactivityTimer);
+            document.getElementById('quiz-overlay').style.display = "none";
+        }
+        // Any touch/click inside the quiz keeps it open (resets the 8s inactivity timer).
+        (function () {
+            var ov = document.getElementById('quiz-overlay');
+            ov.addEventListener('click', resetQuizInactivity);
+            ov.addEventListener('touchstart', resetQuizInactivity, { passive: true });
+        })();
 
         // --- PHYSICS ENGINE ---
         var moon = { d:380, sz:60, spd:0.0012, ang:Math.random()*7, col:"#f0f9ff", craters:[] };
@@ -229,7 +255,7 @@
         for (var si = 0; si < 7; si++) {
             soothers.push({
                 x: Math.random(), y: Math.random(),
-                sz: 6 + Math.random() * 6,
+                sz: 9 + Math.random() * 6,
                 rot: Math.random() * Math.PI * 2, vrot: (Math.random() - 0.5) * 0.0007,
                 vx: (Math.random() - 0.5) * 0.00003, vy: (Math.random() - 0.5) * 0.00003,
                 blink: Math.random() * Math.PI * 2,
@@ -479,7 +505,7 @@
             context.translate(px, py); context.rotate(rot);
             context.globalAlpha = alpha;
             context.lineCap = 'round';
-            context.shadowBlur = 14; context.shadowColor = glow;
+            context.shadowBlur = 5; context.shadowColor = glow;
             // Ring handle (torus) at top
             context.lineWidth = r * 0.42; context.strokeStyle = col;
             context.beginPath(); context.arc(0, -r * 1.8, r * 0.82, 0, 7); context.stroke();
@@ -548,7 +574,12 @@
         }
 
         function startSimulation() {
+            // Flashes fire frequently (canvas only, cheap) so each birth still lights up the globe.
             setInterval(function() {
+                if (worldGeo) { var keys = Object.keys(featureIndex); flashingISO[keys[Math.floor(Math.random()*keys.length)]] = Date.now(); }
+            }, 1000 / BIRTH_RATE);
+            // DOM text updates once per second: frequent updates forced reflows that stuttered the rotation.
+            function updateStats() {
                 var now = new Date(), start = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
                 var elapsed = (Date.now() - start) / 1000;
                 var total = Math.floor(elapsed * BIRTH_RATE);
@@ -559,10 +590,9 @@
                 }
                 document.getElementById('clock').innerText = now.toLocaleTimeString('en-GB');
                 document.getElementById('bar').style.width = (elapsed / 86400 * 100) + "%";
-                if (worldGeo) {
-                    var keys = Object.keys(featureIndex); flashingISO[keys[Math.floor(Math.random()*keys.length)]] = Date.now();
-                }
-            }, 1000 / BIRTH_RATE);
+            }
+            updateStats();
+            setInterval(updateStats, 1000);
         }
 
         var field = document.getElementById('starfield');
