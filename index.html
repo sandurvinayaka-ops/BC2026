@@ -6,7 +6,7 @@
     <title>Birth Pulse - Cinematic TV Pro V96</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Rajdhani:wght@600;700&display=swap" rel="stylesheet">
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -48,13 +48,17 @@
         }
 
         .header-box { pointer-events: auto; }
-        .philips-title { font-size: 2.8vw; font-weight: 900; color: #0b5ed7; letter-spacing: -0.05vw; margin-bottom: 10px; text-transform: uppercase; }
+        .philips-title { font-family: 'Poppins', Arial, sans-serif; font-size: 2.6vw; font-weight: 700; color: #ffffff; letter-spacing: 0.12vw; margin-bottom: 10px; text-transform: uppercase; }
         .main-heading { font-size: 3.1vw; color: #a855f7; font-weight: 800; white-space: nowrap; }
         .main-heading span { display: inline-block; transition: all 0.5s ease; }
         
         @keyframes ampJump { 0%, 55%, 75%, 100% { transform: translateY(0); } 65% { transform: translateY(-20px); } }
 
-        .firstchar { transition: color 0.6s ease, text-shadow 0.6s ease; }
+        @keyframes letterSpin { 0% { transform: rotate(0deg); } 33.33%, 100% { transform: rotate(360deg); } }
+        .firstchar { display: inline-block; color: #a855f7; animation: letterSpin 3s linear infinite; }
+        .firstchar.fc1 { animation-delay: 0s; }
+        .firstchar.fc2 { animation-delay: 1s; }
+        .firstchar.fc3 { animation-delay: 2s; }
         .w_amp { color: #a855f7 !important; margin: 0 0.5vw; animation: ampJump 3s infinite; }
 
         .stats-box { pointer-events: auto; width: 100%; }
@@ -124,7 +128,7 @@
         <div class="header-box">
             <div class="philips-title">PHILIPS</div>
             <h1 class="main-heading">
-                <span class="firstchar">M</span>other <span class="w_amp">&</span> <span class="firstchar">C</span>hild <span class="firstchar">C</span>are — Women's Health
+                <span class="firstchar fc1">M</span>other <span class="w_amp">&</span> <span class="firstchar fc2">C</span>hild <span class="firstchar fc3">C</span>are — Women's Health
             </h1>
         </div>
 
@@ -247,12 +251,10 @@
         })();
 
         // --- PHYSICS ENGINE ---
-        var moon = { d:380, sz:60, spd:0.0012, ang:Math.random()*7, col:"#f0f9ff", craters:[] };
-        for(var i=0; i<20; i++) moon.craters.push({x:(Math.random()-0.5)*100, y:(Math.random()-0.5)*100, r:Math.random()*5+1, op:Math.random()*0.3});
-        var planets = [{id:'mer',d:130,sz:6,spd:0.0008,col:"#A5A5A5",ang:Math.random()*7}];
+        var planets = [];
         // Tiny soothers (pacifiers) drifting through space like glowing, blinking asteroids.
         var soothers = [];
-        for (var si = 0; si < 7; si++) {
+        for (var si = 0; si < 3; si++) {
             soothers.push({
                 x: Math.random(), y: Math.random(),
                 sz: 9 + Math.random() * 6,
@@ -417,7 +419,6 @@
             sGrad.addColorStop(0,"#ffffff"); sGrad.addColorStop(0.45,"#fef3c7"); sGrad.addColorStop(0.8,"#fcd34d"); sGrad.addColorStop(1,"#f59e0b");
             context.beginPath(); context.arc(sx,sy,sunR,0,7); context.fillStyle=sGrad; context.fill();
 
-            drawMoon(moon, ex, ey, sx, sy, dt);
             for(var i=0; i<planets.length; i++) drawPlanet(planets[i], ex, ey, sx, sy, dt);
 
             var radius = projection.scale();
@@ -433,7 +434,7 @@
             context.beginPath(); context.arc(ex, ey, radius, 0, 7); context.fillStyle = globeOcean; context.fill();
 
             if (worldGeo) {
-                // Landmasses: brighter fill and clearer borders for better visibility on the globe
+                // Landmasses with visible country borders
                 context.beginPath(); path(worldGeo);
                 context.fillStyle = "#1fe3a4"; context.fill();
                 context.strokeStyle = "rgba(255,255,255,0.6)"; context.lineWidth = 1; context.stroke();
@@ -458,22 +459,6 @@
             }
             drawSoothers(now, dt);
             updateComets(dt);
-        }
-
-        function drawMoon(p, ex, ey, sx, sy, dt) {
-            p.ang += p.spd * dt * 0.1; var px=ex+Math.cos(p.ang)*p.d, py=ey+Math.sin(p.ang)*p.d*0.7;
-            var dx=px-sx, dy=py-sy, ang=Math.atan2(dy,dx);
-            context.save(); context.translate(px,py);
-            context.shadowBlur = 18; context.shadowColor = "#3b82f6";
-            var g = context.createRadialGradient(0, 0, 0, 0, 0, p.sz);
-            g.addColorStop(0, "#ffffff"); g.addColorStop(0.6, "#dbeafe"); g.addColorStop(1, "#93c5fd");
-            context.beginPath(); context.arc(0, 0, p.sz, 0, 7); context.fillStyle = g; context.fill();
-            context.clip(); context.fillStyle = "rgba(147, 197, 253, 0.3)";
-            for(var i=0; i<8; i++) { context.beginPath(); context.ellipse(Math.sin(i)*15, Math.cos(i)*10, 20, 12, i, 0, 7); context.fill(); }
-            context.restore();
-            var shad = context.createRadialGradient(px + Math.cos(ang)*p.sz*0.5, py + Math.sin(ang)*p.sz*0.5, 0, px, py, p.sz);
-            shad.addColorStop(0, "rgba(0,0,0,0)"); shad.addColorStop(1, "rgba(0,0,0,0.95)");
-            context.beginPath(); context.arc(px,py,p.sz+0.5,0,7); context.fillStyle=shad; context.fill();
         }
 
         function drawPlanet(p,ex,ey,sx,sy,dt){
@@ -632,19 +617,6 @@
         window.addEventListener('load', fitProgress);
         if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitProgress);
 
-        // Randomly recolor the M/C/C first letters with a bright color, all together.
-        var firstChars = document.getElementsByClassName('firstchar');
-        function randomizeFirstChars() {
-            var hue = Math.floor(Math.random() * 360);
-            var color = 'hsl(' + hue + ', 100%, 60%)';
-            var glow = 'hsl(' + hue + ', 100%, 50%)';
-            for (var i = 0; i < firstChars.length; i++) {
-                firstChars[i].style.color = color;
-                firstChars[i].style.textShadow = '0 0 30px ' + glow;
-            }
-        }
-        randomizeFirstChars();
-        setInterval(randomizeFirstChars, 1500);
 
         // Kiosk safety net: periodically refresh to clear accumulated memory/state; skip while a user is interacting.
         setInterval(function() {
