@@ -85,6 +85,14 @@
         @keyframes barShine { 0% { transform: translateX(-100%); } 60%, 100% { transform: translateX(100%); } }
         #clock { font-family: 'Rajdhani', Arial, sans-serif; font-variant-numeric: tabular-nums; color: #fbbf24; font-size: 1.8vw; font-weight: 700; display: block; text-align: center; margin-top: 12px; }
 
+        .regions-box { width: 100%; margin-top: 20px; }
+        .regions-title { font-size: 1.1vw; color: #38bdf8; text-transform: uppercase; font-weight: 900; letter-spacing: 2px; margin-bottom: 10px; }
+        .region-globes { display: flex; gap: 0.8vw; }
+        .region-item { display: flex; flex-direction: column; align-items: center; }
+        .region-count { font-family: 'Rajdhani', Arial, sans-serif; font-variant-numeric: tabular-nums; font-size: 1.5vw; font-weight: 700; color: #fbbf24; margin-bottom: 4px; }
+        .region-canvas { width: 6.2vw; height: 6.2vw; filter: drop-shadow(0 0 6px rgba(56,189,248,0.35)); }
+        .region-name { font-size: 0.95vw; color: #e2e8f0; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-top: 4px; }
+
         /* 4. CANVAS */
         .stars-container { position: absolute; width: 100%; height: 100%; z-index: 1; pointer-events: none; }
         .star { position: absolute; background: #ffffff; border-radius: 50%; box-shadow: 0 0 4px rgba(255,255,255,0.9); animation: blink var(--t) infinite ease-in-out; animation-delay: var(--d); }
@@ -131,6 +139,36 @@
                 <div class="bar-wrapper"><div id="bar" class="bar-fill"></div></div>
                 <span id="clock">00:00:00</span>
             </div>
+            <div class="regions-box">
+                <div class="regions-title">Births Today by Region</div>
+                <div class="region-globes">
+                    <div class="region-item">
+                        <span class="region-count" id="r-asia">0</span>
+                        <canvas class="region-canvas" data-region="asia"></canvas>
+                        <span class="region-name">Asia</span>
+                    </div>
+                    <div class="region-item">
+                        <span class="region-count" id="r-africa">0</span>
+                        <canvas class="region-canvas" data-region="africa"></canvas>
+                        <span class="region-name">Africa</span>
+                    </div>
+                    <div class="region-item">
+                        <span class="region-count" id="r-americas">0</span>
+                        <canvas class="region-canvas" data-region="americas"></canvas>
+                        <span class="region-name">Americas</span>
+                    </div>
+                    <div class="region-item">
+                        <span class="region-count" id="r-europe">0</span>
+                        <canvas class="region-canvas" data-region="europe"></canvas>
+                        <span class="region-name">Europe</span>
+                    </div>
+                    <div class="region-item">
+                        <span class="region-count" id="r-oceania">0</span>
+                        <canvas class="region-canvas" data-region="oceania"></canvas>
+                        <span class="region-name">Oceania</span>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -143,7 +181,16 @@
         // Full page refresh interval (ms) to clear any accumulated memory/state on long-running TVs.
         var RELOAD_MS = 3 * 60 * 60 * 1000;
         // Max internal canvas resolution (longest side, px). Lower = smoother on 4K TVs.
-        var RENDER_CAP = 1600;
+        var RENDER_CAP = 1280;
+        // Continental share of global births (approx real-world distribution).
+        var REGIONS = [
+            { id: 'asia', share: 0.55 },
+            { id: 'africa', share: 0.30 },
+            { id: 'americas', share: 0.08 },
+            { id: 'europe', share: 0.06 },
+            { id: 'oceania', share: 0.01 }
+        ];
+        function fmt(n) { return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, "."); }
 
         // --- QUIZ DATA ---
         var quizData = [
@@ -176,8 +223,7 @@
         // --- PHYSICS ENGINE ---
         var moon = { d:380, sz:60, spd:0.0012, ang:Math.random()*7, col:"#f0f9ff", craters:[] };
         for(var i=0; i<20; i++) moon.craters.push({x:(Math.random()-0.5)*100, y:(Math.random()-0.5)*100, r:Math.random()*5+1, op:Math.random()*0.3});
-        var saturn = { d:650, sz:32, spd:0.0002, ang:Math.random()*7, col: "#d8ae8d" };
-        var planets = [{id:'mer',d:130,sz:6,spd:0.0008,col:"#A5A5A5",ang:Math.random()*7},{id:'jup',d:530,sz:28,spd:0.0003,col:"#c3a48e",ang:Math.random()*7}];
+        var planets = [{id:'mer',d:130,sz:6,spd:0.0008,col:"#A5A5A5",ang:Math.random()*7}];
         // Tiny soothers (pacifiers) drifting through space like glowing, blinking asteroids.
         var soothers = [];
         for (var si = 0; si < 7; si++) {
@@ -243,10 +289,11 @@
 
         function init() {
             d3.json("https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_admin_0_countries.geojson").then(function(data) {
-                simplifyGeo(data, 2); // fewer vertices => cheaper per-frame reprojection => smoother motion
+                simplifyGeo(data, 3); // fewer vertices => cheaper per-frame reprojection => smoother motion
                 worldGeo = data;
                 for(var i=0; i<data.features.length; i++){ var f = data.features[i]; featureIndex[f.properties.ISO_A3 || f.properties.ADM0_A3] = f; }
                 document.getElementById('loading').style.display='none';
+                renderRegionGlobes();
                 requestAnimationFrame(renderLoop); startSimulation();
             });
         }
@@ -271,6 +318,38 @@
                         for (var q = 0; q < g.coordinates[m].length; q++) g.coordinates[m][q] = ring(g.coordinates[m][q]);
                 }
             }
+        }
+
+        // Per-region mini globes: view angle [-lon,-lat] centered on each continent, and which CONTINENT values to highlight.
+        var REGION_VIEW = { asia:[-90,-30], africa:[-20,0], europe:[-15,-50], americas:[80,-10], oceania:[-140,25] };
+        var REGION_CONTINENTS = { asia:['Asia'], africa:['Africa'], europe:['Europe'], americas:['North America','South America'], oceania:['Oceania'] };
+        function renderRegionGlobes() {
+            var list = document.querySelectorAll('.region-canvas');
+            for (var i = 0; i < list.length; i++) drawRegionGlobe(list[i], list[i].getAttribute('data-region'));
+        }
+        function drawRegionGlobe(cv, region) {
+            var size = 240; cv.width = size; cv.height = size;
+            var ctx = cv.getContext('2d'), cx = size / 2, cy = size / 2, r = size / 2 - 8;
+            var proj = d3.geoOrthographic().scale(r).translate([cx, cy]).clipAngle(90).rotate(REGION_VIEW[region]);
+            var p = d3.geoPath(proj, ctx);
+            // Ocean sphere
+            var og = ctx.createRadialGradient(cx - r / 3, cy - r / 3, r / 8, cx, cy, r);
+            og.addColorStop(0, '#60a5fa'); og.addColorStop(0.6, '#0a192f'); og.addColorStop(1, '#020617');
+            ctx.beginPath(); ctx.arc(cx, cy, r, 0, 7); ctx.fillStyle = og; ctx.fill();
+            // Land: dim elsewhere, gold for this region's continent(s)
+            var conts = REGION_CONTINENTS[region];
+            for (var i = 0; i < worldGeo.features.length; i++) {
+                var f = worldGeo.features[i];
+                ctx.beginPath(); p(f);
+                if (conts.indexOf(f.properties.CONTINENT) !== -1) {
+                    ctx.fillStyle = '#ffd700'; ctx.fill();
+                    ctx.lineWidth = 0.5; ctx.strokeStyle = 'rgba(255,255,255,0.8)'; ctx.stroke();
+                } else {
+                    ctx.fillStyle = 'rgba(16,185,129,0.30)'; ctx.fill();
+                }
+            }
+            // Atmosphere rim
+            ctx.beginPath(); ctx.arc(cx, cy, r, 0, 7); ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(56,189,248,0.6)'; ctx.stroke();
         }
 
         function renderLoop() {
@@ -313,7 +392,6 @@
             context.beginPath(); context.arc(sx,sy,sunR,0,7); context.fillStyle=sGrad; context.fill();
 
             drawMoon(moon, ex, ey, sx, sy, dt);
-            drawSaturn(saturn, ex, ey, sx, sy, dt);
             for(var i=0; i<planets.length; i++) drawPlanet(planets[i], ex, ey, sx, sy, dt);
 
             var radius = projection.scale();
@@ -369,19 +447,6 @@
             context.restore();
             var shad = context.createRadialGradient(px + Math.cos(ang)*p.sz*0.5, py + Math.sin(ang)*p.sz*0.5, 0, px, py, p.sz);
             shad.addColorStop(0, "rgba(0,0,0,0)"); shad.addColorStop(1, "rgba(0,0,0,0.95)");
-            context.beginPath(); context.arc(px,py,p.sz+0.5,0,7); context.fillStyle=shad; context.fill();
-        }
-
-        function drawSaturn(p,ex,ey,sx,sy,dt){
-            p.ang += p.spd*dt*0.1; var px=ex+Math.cos(p.ang)*p.d, py=ey+Math.sin(p.ang)*p.d*0.65;
-            var dx=px-sx, dy=py-sy, ang=Math.atan2(dy,dx);
-            context.save(); context.translate(px,py);
-            context.globalAlpha=0.6; for(var r=0;r<10;r++){ context.beginPath(); context.ellipse(0,0,p.sz*(1.8+r*0.1),p.sz*(0.6+r*0.03),0.4,0,7); context.strokeStyle="rgba(216, 174, 141, 0.2)"; context.stroke(); }
-            context.globalAlpha=1; var g=context.createRadialGradient(-p.sz*0.3,-p.sz*0.3,0,0,0,p.sz); g.addColorStop(0,p.col); g.addColorStop(1,"#1a0f08");
-            context.beginPath(); context.arc(0,0,p.sz,0,7); context.fillStyle=g; context.fill();
-            context.restore();
-            var shad=context.createRadialGradient(px+Math.cos(ang)*p.sz*0.5, py+Math.sin(ang)*p.sz*0.5, 0, px,py,p.sz);
-            shad.addColorStop(0,"rgba(0,0,0,0)"); shad.addColorStop(1,"rgba(0,0,0,0.9)");
             context.beginPath(); context.arc(px,py,p.sz+0.5,0,7); context.fillStyle=shad; context.fill();
         }
 
@@ -486,7 +551,12 @@
             setInterval(function() {
                 var now = new Date(), start = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
                 var elapsed = (Date.now() - start) / 1000;
-                document.getElementById('birthCount').innerText = Math.floor(elapsed * BIRTH_RATE).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+                var total = Math.floor(elapsed * BIRTH_RATE);
+                document.getElementById('birthCount').innerText = fmt(total);
+                for (var ri = 0; ri < REGIONS.length; ri++) {
+                    var rel = document.getElementById('r-' + REGIONS[ri].id);
+                    if (rel) rel.innerText = fmt(Math.floor(total * REGIONS[ri].share));
+                }
                 document.getElementById('clock').innerText = now.toLocaleTimeString('en-GB');
                 document.getElementById('bar').style.width = (elapsed / 86400 * 100) + "%";
                 if (worldGeo) {
