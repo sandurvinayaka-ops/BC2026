@@ -182,6 +182,8 @@
         var RELOAD_MS = 3 * 60 * 60 * 1000;
         // Max internal canvas resolution (longest side, px). Lower = smoother on 4K TVs.
         var RENDER_CAP = 1280;
+        // Cap frame rate for steady, even motion on weak TV hardware (uneven 60fps looks juddery).
+        var TARGET_FPS = 30, FRAME_MS = 1000 / TARGET_FPS, lastFrameTs = 0;
         // Continental share of global births (approx real-world distribution).
         var REGIONS = [
             { id: 'asia', share: 0.55 },
@@ -398,9 +400,11 @@
             ctx.beginPath(); ctx.arc(cx, cy, r, 0, 7); ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(56,189,248,0.6)'; ctx.stroke();
         }
 
-        function renderLoop() {
+        function renderLoop(ts) {
             // Schedule the next frame FIRST so a transient draw error can never kill the loop and blank the TV.
             requestAnimationFrame(renderLoop);
+            if (ts && ts - lastFrameTs < FRAME_MS) return; // hold to the target frame rate
+            lastFrameTs = ts || 0;
             try { renderFrame(); } catch (err) { if (window.console) console.warn('render frame skipped:', err); }
         }
 
