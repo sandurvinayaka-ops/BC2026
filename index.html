@@ -273,6 +273,8 @@
             h = Math.max(1, Math.round(vh * scale));
             canvas.width = w; canvas.height = h;
             context.imageSmoothingEnabled = true;
+            // Keep the projection in sync with the canvas so land and ocean stay aligned after any resize.
+            if (projection) projection.scale(h/2.8).translate([w*0.74, h*0.5]);
         }
         setSizes();
         var projection = d3.geoOrthographic().scale(h/2.8).translate([w*0.74, h*0.5]).clipAngle(90);
