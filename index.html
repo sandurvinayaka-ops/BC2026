@@ -181,7 +181,7 @@
         // Full page refresh interval (ms) to clear any accumulated memory/state on long-running TVs.
         var RELOAD_MS = 3 * 60 * 60 * 1000;
         // Max internal canvas resolution (longest side, px). Lower = smoother on 4K TVs.
-        var RENDER_CAP = 1280;
+        var RENDER_CAP = 1920;
         // Cap frame rate for steady, even motion on weak TV hardware (uneven 60fps looks juddery).
         var TARGET_FPS = 30, FRAME_MS = 1000 / TARGET_FPS, lastFrameTs = 0;
         // Continental share of global births (approx real-world distribution).
@@ -322,6 +322,7 @@
                     var c = f.properties.CONTINENT;
                     return c !== 'Antarctica' && c !== 'Seven seas (open ocean)';
                 });
+                simplifyGeo(data, 0.18); // shape-preserving vertex reduction => cheaper per-frame projection => smoother rotation
                 worldGeo = data;
                 for(var i=0; i<data.features.length; i++){ var f = data.features[i]; featureIndex[f.properties.ISO_A3 || f.properties.ADM0_A3] = f; }
                 document.getElementById('loading').style.display='none';
