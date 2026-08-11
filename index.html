@@ -453,10 +453,12 @@
             context.beginPath(); context.arc(ex, ey, radius, 0, 7); context.fillStyle = globeOcean; context.fill();
 
             if (worldGeo) {
-                // Landmasses with depth shading and visible country borders
-                context.beginPath(); path(worldGeo);
-                context.fillStyle = globeLand; context.fill();
-                context.strokeStyle = "rgba(255,255,255,0.55)"; context.lineWidth = 0.8; context.stroke();
+                // Draw each country separately so horizon clipping can't flip the fill and flash the whole globe green.
+                context.fillStyle = globeLand; context.strokeStyle = "rgba(255,255,255,0.55)"; context.lineWidth = 0.8;
+                for (var fi = 0; fi < worldGeo.features.length; fi++) {
+                    context.beginPath(); path(worldGeo.features[fi]);
+                    context.fill(); context.stroke();
+                }
                 // 3D rim shadow for a rounded sphere look
                 context.beginPath(); context.arc(ex, ey, radius, 0, 7); context.fillStyle = globeShade; context.fill();
 
