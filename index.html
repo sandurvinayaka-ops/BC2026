@@ -181,7 +181,7 @@
         // Full page refresh interval (ms) to clear any accumulated memory/state on long-running TVs.
         var RELOAD_MS = 3 * 60 * 60 * 1000;
         // Max internal canvas resolution (longest side, px). Lower = smoother on 4K TVs.
-        var RENDER_CAP = 1920;
+        var RENDER_CAP = 1600;
         // Cap frame rate for steady, even motion on weak TV hardware (uneven 60fps looks juddery).
         var TARGET_FPS = 30, FRAME_MS = 1000 / TARGET_FPS, lastFrameTs = 0;
         // Continental share of global births (approx real-world distribution).
@@ -466,10 +466,10 @@
                 context.save();
                 context.beginPath(); context.arc(ex, ey, radius, 0, 7); context.clip();
                 // Draw each country separately so horizon clipping can't flip the fill and flash the whole globe green.
-                context.fillStyle = globeLand; context.strokeStyle = "rgba(255,255,255,0.55)"; context.lineWidth = 0.8;
+                context.fillStyle = globeLand;
                 for (var fi = 0; fi < worldGeo.features.length; fi++) {
                     context.beginPath(); path(worldGeo.features[fi]);
-                    context.fill(); context.stroke();
+                    context.fill();
                 }
                 context.restore();
                 // 3D rim shadow for a rounded sphere look
