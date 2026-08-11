@@ -314,8 +314,7 @@
         document.getElementById('sleep-overlay').style.display = 'none';
 
         function init() {
-            d3.json("https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_admin_0_countries.geojson").then(function(data) {
-                simplifyGeo(data, 3); // fewer vertices => cheaper per-frame reprojection => smoother motion
+            d3.json("https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_50m_admin_0_countries.geojson").then(function(data) {
                 worldGeo = data;
                 for(var i=0; i<data.features.length; i++){ var f = data.features[i]; featureIndex[f.properties.ISO_A3 || f.properties.ADM0_A3] = f; }
                 document.getElementById('loading').style.display='none';
