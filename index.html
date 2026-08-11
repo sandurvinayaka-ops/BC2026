@@ -404,7 +404,8 @@
 
             projection.rotate([rotX, rotY]);
             context.clearRect(0,0,w,h);
-            var ex=w*0.74, ey=h*0.5;
+            // Derive the globe center from the projection so ocean and land can never separate.
+            var ptr = projection.translate(), ex = ptr[0], ey = ptr[1];
 
             var sAng = now * 0.00003, sx = ex + Math.cos(sAng)*(w*0.55), sy = ey + Math.sin(sAng)*(h*0.4);
             var sunR = 90;
