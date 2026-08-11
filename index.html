@@ -314,8 +314,12 @@
         document.getElementById('sleep-overlay').style.display = 'none';
 
         function init() {
-            d3.json("https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_50m_admin_0_countries.geojson").then(function(data) {
-                simplifyGeo(data, 0.2); // shape-preserving simplification so the detailed 50m map stays smooth on TV
+            d3.json("https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_admin_0_countries.geojson").then(function(data) {
+                // Drop Antarctica / open-ocean polygons: they wrap the pole and flash across the globe when clipped at the horizon.
+                data.features = data.features.filter(function(f) {
+                    var c = f.properties.CONTINENT;
+                    return c !== 'Antarctica' && c !== 'Seven seas (open ocean)';
+                });
                 worldGeo = data;
                 for(var i=0; i<data.features.length; i++){ var f = data.features[i]; featureIndex[f.properties.ISO_A3 || f.properties.ADM0_A3] = f; }
                 document.getElementById('loading').style.display='none';
@@ -453,12 +457,16 @@
             context.beginPath(); context.arc(ex, ey, radius, 0, 7); context.fillStyle = globeOcean; context.fill();
 
             if (worldGeo) {
+                // Clip to the globe disc so no country fill can ever spill across the screen.
+                context.save();
+                context.beginPath(); context.arc(ex, ey, radius, 0, 7); context.clip();
                 // Draw each country separately so horizon clipping can't flip the fill and flash the whole globe green.
                 context.fillStyle = globeLand; context.strokeStyle = "rgba(255,255,255,0.55)"; context.lineWidth = 0.8;
                 for (var fi = 0; fi < worldGeo.features.length; fi++) {
                     context.beginPath(); path(worldGeo.features[fi]);
                     context.fill(); context.stroke();
                 }
+                context.restore();
                 // 3D rim shadow for a rounded sphere look
                 context.beginPath(); context.arc(ex, ey, radius, 0, 7); context.fillStyle = globeShade; context.fill();
 
