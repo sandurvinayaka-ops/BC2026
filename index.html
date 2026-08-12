@@ -181,7 +181,7 @@
         // Full page refresh interval (ms) to clear any accumulated memory/state on long-running TVs.
         var RELOAD_MS = 3 * 60 * 60 * 1000;
         // Max internal canvas resolution (longest side, px). Lower = smoother on 4K TVs.
-        var RENDER_CAP = 1920;
+        var RENDER_CAP = 1600;
         // Cap frame rate for steady, even motion on weak TV hardware (uneven 60fps looks juddery).
         var TARGET_FPS = 30, FRAME_MS = 1000 / TARGET_FPS, lastFrameTs = 0;
         // Continental share of global births (approx real-world distribution).
@@ -500,7 +500,7 @@
                 context.restore();
 
                 // Birth flashes: a bright gold pulse per country, held bright then fading for clear visibility
-                var FLASH_MS = 2500;
+                var FLASH_MS = 1400;
                 for (var iso in flashingISO) {
                     var age = now - flashingISO[iso];
                     if (age < FLASH_MS) {
