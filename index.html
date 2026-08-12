@@ -513,7 +513,7 @@
             }
             drawSoothers(now, dt);
             updateComets(dt);
-            updateRegionGlobes(now, dt);
+            // updateRegionGlobes(now, dt); // spin disabled: redrawing 5 mini globes/frame was stalling the main scene
         }
 
         function drawPlanet(p,ex,ey,sx,sy,dt){
