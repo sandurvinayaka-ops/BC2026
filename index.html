@@ -181,7 +181,7 @@
         // Full page refresh interval (ms) to clear any accumulated memory/state on long-running TVs.
         var RELOAD_MS = 3 * 60 * 60 * 1000;
         // Max internal canvas resolution (longest side, px). Lower = smoother on 4K TVs.
-        var RENDER_CAP = 1600;
+        var RENDER_CAP = 1920;
         // Cap frame rate for steady, even motion on weak TV hardware (uneven 60fps looks juddery).
         var TARGET_FPS = 30, FRAME_MS = 1000 / TARGET_FPS, lastFrameTs = 0;
         // Continental share of global births (approx real-world distribution).
@@ -263,7 +263,7 @@
             });
         }
         var worldGeo = null, featureIndex = {}, flashingISO = {}, comets = [];
-        var globeOcean = null, globeAtmo = null, globeLand = null, globeShade = null, globeDimKey = ""; // cached globe gradients (rebuilt only on resize)
+        var globeOcean = null, globeAtmo = null, globeLand = null, globeDimKey = ""; // cached globe gradients (rebuilt only on resize)
         var canvas = document.getElementById("main-canvas"), context = canvas.getContext("2d");
         var w, h, isDragging = false, lastX, lastY, rotX = 0, rotY = TARGET_TILT, lastT = Date.now(), lastIntT = Date.now();
 
@@ -448,17 +448,15 @@
             var radius = projection.scale();
             // Cache the ocean + atmosphere gradients; only rebuild when the canvas size changes (perf on TV).
             if (globeDimKey !== w + 'x' + h) {
-                globeAtmo = context.createRadialGradient(ex, ey, radius*0.88, ex, ey, radius*1.2);
-                globeAtmo.addColorStop(0, "rgba(56,189,248,0.0)"); globeAtmo.addColorStop(0.4, "rgba(56,189,248,0.4)"); globeAtmo.addColorStop(0.75, "rgba(37,99,235,0.18)"); globeAtmo.addColorStop(1, "transparent");
+                globeAtmo = context.createRadialGradient(ex, ey, radius*0.9, ex, ey, radius*1.12);
+                globeAtmo.addColorStop(0, "rgba(56,189,248,0.0)"); globeAtmo.addColorStop(0.5, "rgba(56,189,248,0.4)"); globeAtmo.addColorStop(1, "transparent");
                 globeOcean = context.createRadialGradient(ex-radius/2.4, ey-radius/2.4, radius/18, ex, ey, radius);
-                globeOcean.addColorStop(0, "#7dd3fc"); globeOcean.addColorStop(0.35, "#2563eb"); globeOcean.addColorStop(0.7, "#0c1e42"); globeOcean.addColorStop(1, "#020617");
+                globeOcean.addColorStop(0, "#7dd3fc"); globeOcean.addColorStop(0.3, "#2563eb"); globeOcean.addColorStop(0.65, "#0c1e42"); globeOcean.addColorStop(0.92, "#030a1c"); globeOcean.addColorStop(1, "#01040f");
                 globeLand = context.createRadialGradient(ex-radius/2.4, ey-radius/2.4, radius/10, ex, ey, radius);
-                globeLand.addColorStop(0, "#5cf2c0"); globeLand.addColorStop(0.55, "#1fbf8f"); globeLand.addColorStop(1, "#0a6b50");
-                globeShade = context.createRadialGradient(ex, ey, radius*0.5, ex, ey, radius);
-                globeShade.addColorStop(0, "rgba(0,0,0,0)"); globeShade.addColorStop(0.82, "rgba(0,0,0,0)"); globeShade.addColorStop(1, "rgba(1,8,24,0.55)");
+                globeLand.addColorStop(0, "#5cf2c0"); globeLand.addColorStop(0.5, "#1fbf8f"); globeLand.addColorStop(0.9, "#0a6b50"); globeLand.addColorStop(1, "#064632");
                 globeDimKey = w + 'x' + h;
             }
-            context.beginPath(); context.arc(ex, ey, radius*1.2, 0, 7); context.fillStyle = globeAtmo; context.fill();
+            context.beginPath(); context.arc(ex, ey, radius*1.12, 0, 7); context.fillStyle = globeAtmo; context.fill();
             context.beginPath(); context.arc(ex, ey, radius, 0, 7); context.fillStyle = globeOcean; context.fill();
 
             if (worldGeo) {
@@ -472,8 +470,6 @@
                     context.fill();
                 }
                 context.restore();
-                // 3D rim shadow for a rounded sphere look
-                context.beginPath(); context.arc(ex, ey, radius, 0, 7); context.fillStyle = globeShade; context.fill();
 
                 // Birth flashes: a bright gold pulse per country, held bright then fading for clear visibility
                 var FLASH_MS = 2500;
