@@ -8,7 +8,6 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Rajdhani:wght@600;700&display=swap" rel="stylesheet">
     <script src="https://d3js.org/d3.v7.min.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body, html {
             margin: 0; padding: 0; width: 100vw; height: 100vh;
@@ -112,9 +111,9 @@
     
     <div id="quiz-overlay">
         <div class="quiz-card">
-            <h2 id="quiz-question" class="text-3xl font-bold mb-8 text-white">Question</h2>
+            <h2 id="quiz-question" style="font-size:1.9rem; font-weight:700; margin-bottom:2rem; color:#fff;">Question</h2>
             <div id="quiz-options"></div>
-            <div id="quiz-feedback" class="mt-4"></div>
+            <div id="quiz-feedback" style="margin-top:1rem;"></div>
         </div>
     </div>
 
@@ -132,9 +131,9 @@
             <span class="label">Global Birth Count Today</span>
             <div id="birthCount" class="count">0</div>
             <div class="progress-ui">
-                <div class="flex justify-between w-[100%] mb-1 px-1">
-                    <span class="text-cyan-400 font-bold text-[1.1vw]">00:00</span>
-                    <span class="text-cyan-400 font-bold text-[1.1vw]">24:00</span>
+                <div style="display:flex; justify-content:space-between; width:100%; margin-bottom:4px; padding:0 4px;">
+                    <span style="color:#22d3ee; font-weight:700; font-size:1.1vw;">00:00</span>
+                    <span style="color:#22d3ee; font-weight:700; font-size:1.1vw;">24:00</span>
                 </div>
                 <div class="bar-wrapper"><div id="bar" class="bar-fill"></div></div>
                 <span id="clock">00:00:00</span>
