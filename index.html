@@ -326,7 +326,7 @@
                 worldGeo = data;
                 for(var i=0; i<data.features.length; i++){ var f = data.features[i]; featureIndex[f.properties.ISO_A3 || f.properties.ADM0_A3] = f; }
                 document.getElementById('loading').style.display='none';
-                renderRegionGlobes();
+                initRegionGlobes(); drawRegionGlobes(0);
                 requestAnimationFrame(renderLoop); startSimulation();
             });
         }
@@ -372,33 +372,53 @@
         // Per-region mini globes: view angle [-lon,-lat] centered on each continent, and which CONTINENT values to highlight.
         var REGION_VIEW = { asia:[-90,-30], africa:[-20,0], europe:[-15,-50], americas:[80,-10], oceania:[-140,25] };
         var REGION_CONTINENTS = { asia:['Asia'], africa:['Africa'], europe:['Europe'], americas:['North America','South America'], oceania:['Oceania'] };
-        function renderRegionGlobes() {
-            var list = document.querySelectorAll('.region-canvas');
-            for (var i = 0; i < list.length; i++) drawRegionGlobe(list[i], list[i].getAttribute('data-region'));
+        // Shared spin: all region globes rotate together (same direction as the big globe), pausing 1s when each region faces front.
+        var REGION_SPIN_SPD = 0.05, regionSpin = 0, regionPhase = 'pause', regionPauseUntil = 0, regionCache = [];
+        function initRegionGlobes() {
+            var list = document.querySelectorAll('.region-canvas'), size = 240;
+            regionCache = [];
+            for (var i = 0; i < list.length; i++) {
+                var cv = list[i]; cv.width = size; cv.height = size;
+                var ctx = cv.getContext('2d'), r = size / 2 - 8;
+                var proj = d3.geoOrthographic().scale(r).translate([size / 2, size / 2]).clipAngle(90);
+                regionCache.push({ ctx: ctx, proj: proj, path: d3.geoPath(proj, ctx), region: cv.getAttribute('data-region'), size: size, r: r });
+            }
         }
-        function drawRegionGlobe(cv, region) {
-            var size = 240; cv.width = size; cv.height = size;
-            var ctx = cv.getContext('2d'), cx = size / 2, cy = size / 2, r = size / 2 - 8;
-            var proj = d3.geoOrthographic().scale(r).translate([cx, cy]).clipAngle(90).rotate(REGION_VIEW[region]);
-            var p = d3.geoPath(proj, ctx);
-            // Ocean sphere
+        function drawRegionGlobes(spin) {
+            for (var i = 0; i < regionCache.length; i++) {
+                var rc = regionCache[i], view = REGION_VIEW[rc.region];
+                rc.proj.rotate([view[0] + spin, view[1]]);
+                drawOneRegion(rc);
+            }
+        }
+        function drawOneRegion(rc) {
+            var ctx = rc.ctx, cx = rc.size / 2, cy = rc.size / 2, r = rc.r, p = rc.path;
+            ctx.clearRect(0, 0, rc.size, rc.size);
             var og = ctx.createRadialGradient(cx - r / 3, cy - r / 3, r / 8, cx, cy, r);
             og.addColorStop(0, '#60a5fa'); og.addColorStop(0.6, '#0a192f'); og.addColorStop(1, '#020617');
             ctx.beginPath(); ctx.arc(cx, cy, r, 0, 7); ctx.fillStyle = og; ctx.fill();
-            // Land: dim elsewhere, gold for this region's continent(s)
-            var conts = REGION_CONTINENTS[region];
+            ctx.save(); ctx.beginPath(); ctx.arc(cx, cy, r, 0, 7); ctx.clip();
+            var conts = REGION_CONTINENTS[rc.region];
             for (var i = 0; i < worldGeo.features.length; i++) {
                 var f = worldGeo.features[i];
                 ctx.beginPath(); p(f);
-                if (conts.indexOf(f.properties.CONTINENT) !== -1) {
-                    ctx.fillStyle = '#ffd700'; ctx.fill();
-                    ctx.lineWidth = 0.5; ctx.strokeStyle = 'rgba(255,255,255,0.8)'; ctx.stroke();
-                } else {
-                    ctx.fillStyle = 'rgba(16,185,129,0.30)'; ctx.fill();
-                }
+                ctx.fillStyle = conts.indexOf(f.properties.CONTINENT) !== -1 ? '#ffd700' : 'rgba(16,185,129,0.30)';
+                ctx.fill();
             }
-            // Atmosphere rim
+            ctx.restore();
             ctx.beginPath(); ctx.arc(cx, cy, r, 0, 7); ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(56,189,248,0.6)'; ctx.stroke();
+        }
+        function updateRegionGlobes(now, dt) {
+            if (!worldGeo || !regionCache.length) return;
+            if (regionPhase === 'pause') {
+                if (now < regionPauseUntil) return;   // hold the region-centered view for 1s
+                regionPhase = 'spin';
+            }
+            regionSpin += REGION_SPIN_SPD * dt;
+            if (regionSpin >= 360) {                   // full revolution -> back to region-centered, then pause
+                regionSpin = 0; regionPhase = 'pause'; regionPauseUntil = now + 1000;
+            }
+            drawRegionGlobes(regionSpin);
         }
 
         function renderLoop(ts) {
@@ -491,6 +511,7 @@
             }
             drawSoothers(now, dt);
             updateComets(dt);
+            updateRegionGlobes(now, dt);
         }
 
         function drawPlanet(p,ex,ey,sx,sy,dt){
