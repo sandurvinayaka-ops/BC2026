@@ -372,9 +372,9 @@
         // Per-region mini globes: view angle [-lon,-lat] centered on each continent, and which CONTINENT values to highlight.
         var REGION_VIEW = { asia:[-90,-30], africa:[-20,0], europe:[-15,-50], americas:[80,-10], oceania:[-140,25] };
         var REGION_CONTINENTS = { asia:['Asia'], africa:['Africa'], europe:['Europe'], americas:['North America','South America'], oceania:['Oceania'] };
-        // Shared spin: all region globes rotate together (same direction as the big globe), pausing 1s when each region faces front.
-        var REGION_SPIN_SPD = 0.05, regionSpin = 0, regionPhase = 'pause', regionPauseUntil = 0, regionCache = [];
-        var REGION_FRAME_MS = 1000 / 15, regionAccum = 0; // redraw mini globes at ~15fps so they don't stall the main scene
+        // One region globe spins at a time (cycling through regions); the rest stay static — keeps the main scene smooth.
+        var REGION_SPIN_SPD = 0.06, regionSpin = 0, regionPhase = 'spin', regionPauseUntil = 0, regionActive = 0, regionCache = [];
+        var REGION_FRAME_MS = 1000 / 20, regionAccum = 0; // redraw only the active mini globe, throttled
         function initRegionGlobes() {
             var list = document.querySelectorAll('.region-canvas'), size = 180;
             regionCache = [];
@@ -387,12 +387,13 @@
                 regionCache.push({ ctx: ctx, proj: proj, path: d3.geoPath(proj, ctx), region: cv.getAttribute('data-region'), size: size, r: r, ocean: og });
             }
         }
-        function drawRegionGlobes(spin) {
-            for (var i = 0; i < regionCache.length; i++) {
-                var rc = regionCache[i], view = REGION_VIEW[rc.region];
-                rc.proj.rotate([view[0] + spin, view[1]]);
-                drawOneRegion(rc);
-            }
+        function drawRegionAt(idx, spin) {
+            var rc = regionCache[idx], view = REGION_VIEW[rc.region];
+            rc.proj.rotate([view[0] + spin, view[1]]);
+            drawOneRegion(rc);
+        }
+        function drawRegionGlobes(spin) { // draw all (used once at init so every globe shows its region)
+            for (var i = 0; i < regionCache.length; i++) drawRegionAt(i, spin);
         }
         function drawOneRegion(rc) {
             var ctx = rc.ctx, cx = rc.size / 2, cy = rc.size / 2, r = rc.r, p = rc.path;
@@ -412,15 +413,20 @@
         function updateRegionGlobes(now, dt) {
             if (!worldGeo || !regionCache.length) return;
             if (regionPhase === 'pause') {
-                if (now < regionPauseUntil) return;   // hold the region-centered view for 1s
-                regionPhase = 'spin'; regionAccum = 0;
+                if (now < regionPauseUntil) return;            // hold the finished globe on its region for 1s
+                regionActive = (regionActive + 1) % regionCache.length; // hand off to the next region
+                regionSpin = 0; regionPhase = 'spin'; regionAccum = 0;
             }
             regionAccum += dt;
-            if (regionAccum < REGION_FRAME_MS) return; // throttle mini-globe redraws below the main frame rate
-            regionSpin += REGION_SPIN_SPD * regionAccum; // advance by elapsed time so spin speed stays constant
+            if (regionAccum < REGION_FRAME_MS) return;         // throttle the active globe's redraws
+            regionSpin += REGION_SPIN_SPD * regionAccum;       // advance by elapsed time so spin speed stays constant
             regionAccum = 0;
-            if (regionSpin >= 360) { regionSpin = 0; regionPhase = 'pause'; regionPauseUntil = now + 1000; }
-            drawRegionGlobes(regionSpin);
+            if (regionSpin >= 360) {                           // finished a revolution -> settle centered, then pause
+                regionSpin = 0; regionPhase = 'pause'; regionPauseUntil = now + 1000;
+                drawRegionAt(regionActive, 0);
+            } else {
+                drawRegionAt(regionActive, regionSpin);
+            }
         }
 
         function renderLoop(ts) {
@@ -513,7 +519,7 @@
             }
             drawSoothers(now, dt);
             updateComets(dt);
-            // updateRegionGlobes(now, dt); // spin disabled: redrawing 5 mini globes/frame was stalling the main scene
+            updateRegionGlobes(now, dt);
         }
 
         function drawPlanet(p,ex,ey,sx,sy,dt){
